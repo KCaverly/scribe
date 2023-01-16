@@ -1,46 +1,133 @@
-// use chrono::DateTime;
-use chrono;
-use std::fs::File;
+use chrono::{self, DateTime, Local};
+use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
 
 pub struct Note {
-    id: u64,
     category: String,
-    group: String,
-    //path: PathBuf,
-    title: String,
-    author: String,
-    // date: DateTime,
+    name: String,
     tags: Vec<String>,
+    date: DateTime<Local>,
 }
 
-impl Note {
-    fn get_path(category: &str, title: &str) -> PathBuf {
-        let path_str = format!("{0}/{1}/{2}.md", "/home/kcaverly/kb", category, title);
+pub trait NoteManager {
+    fn new(
+        category: Option<String>,
+        name: String,
+        tags: Option<Vec<String>>,
+        date: Option<DateTime<Local>>,
+    ) -> Self;
 
-        return PathBuf::from(path_str);
+    fn path(&self) -> PathBuf;
+
+    fn init(&self);
+}
+
+impl NoteManager for Note {
+    fn new(
+        category: Option<String>,
+        name: String,
+        tags: Option<Vec<String>>,
+        date: Option<DateTime<Local>>,
+    ) -> Note {
+        let c: String;
+        if category.is_some() {
+            c = category.unwrap();
+        } else {
+            c = "inbox".to_string();
+        }
+
+        let t: Vec<String>;
+        if tags.is_some() {
+            t = tags.unwrap();
+        } else {
+            t = Vec::new();
+        }
+
+        let d: DateTime<Local>;
+        if date.is_some() {
+            d = date.unwrap();
+        } else {
+            d = chrono::Local::now();
+        }
+
+        return Note {
+            name: name,
+            category: c,
+            date: d,
+            tags: t,
+        };
     }
 
-    fn init(category: &str, title: &str) {
-        let mut p = Self::get_path(category, title);
-        println!("{}", p.exists());
+    fn path(&self) -> PathBuf {
+        let title = self.name.to_lowercase().replace(" ", "_");
+        let path = format!("{0}/{1}/{2}.md", "/home/kcaverly/kb", self.category, title);
+        return PathBuf::from(path);
+    }
+
+    fn init(&self) {
+        println!("Initializing note: {}", self.name);
+
+        let mut p = self.path();
 
         if !p.exists() {
+            println!("File Does not Exist!");
+
+            // Create directory if missing
+            if !p.parent().unwrap().exists() {
+                _ = fs::create_dir(p.parent().unwrap());
+            }
+
             // Create File
-            println!("{}", p.as_path().display().to_string());
             let mut f =
                 File::create(p.as_path().display().to_string()).expect("Unable to create file");
 
-            let init_data =
-                format!("\n<!--- ID: 0 --->\n<!--- CATEGORY: {category}--->\n\n# {title}\n");
+            let date = self.date.format("%Y-%m-%d %I:%M %p");
+            let mut init_str = vec![
+                format!("# {0}\n", self.name),
+                format!("\n**Date:** {date}  "),
+                format!("\n**Tags:** "),
+            ];
 
-            f.write_all(init_data.as_bytes());
-            // fs::write(p.as_path().display().to_string(), "test").expect("UNABLE");
+            for tag in &self.tags {
+                init_str.push(format!("#{tag} "));
+            }
+
+            let init_data = init_str.join("");
+            _ = f.write_all(init_data.trim().as_bytes());
         }
     }
-
-    pub fn new(category: &str, title: &str) {
-        Self::init(category, title);
-    }
 }
+
+// fn init(category: &str, title: &str, tags: Vec<&str>) {
+//     let mut p = Self::get_path(category, title);
+//     println!("{}", p.exists());
+//
+//     if !p.exists() {
+//         // Create Directory if missing
+//         if !p.parent().unwrap().exists() {
+//             fs::create_dir(p.parent().unwrap());
+//         }
+//
+//         // Create File
+//         let mut f =
+//             File::create(p.as_path().display().to_string()).expect("Unable to create file");
+//
+//         let date =
+//         let dt_str = date.format("%Y-%m-%d %I:%M %p");
+//
+//         let mut init_str = vec![
+//             format!("# {title}\n"),
+//             format!("\n**Date:** {dt_str}  "),
+//             format!("\n**Tags:**"),
+//         ];
+//
+//         for tag in tags {
+//             init_str.push(format!("#{tag} "));
+//         }
+//
+//         let init_data = init_str.join("");
+//
+//         f.write_all(init_data.as_bytes());
+//     }
+// }

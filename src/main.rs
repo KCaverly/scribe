@@ -1,7 +1,7 @@
 mod note;
 
-use clap::{Args, Parser, Subcommand};
-use note::Note;
+use clap::{Parser, Subcommand};
+use note::{Note, NoteManager};
 
 #[derive(Debug, Parser)] // requires `derive` feature
 #[command(name = "pj")]
@@ -17,7 +17,7 @@ enum Commands {
     New {
         #[clap(short, long)]
         /// The title of the new note
-        name: Option<String>,
+        name: String,
 
         #[clap(short, long)]
         /// The Category of the new note.
@@ -39,10 +39,21 @@ fn main() {
             category,
             tags,
         } => {
-            // println!("NAME: {}", name.unwrap());
-            // println!("CATEGORY: {}", category.unwrap());
-            // println!("TAGS: {}", tags.unwrap());
-            Note::new(&category.unwrap(), &name.unwrap())
+            let tags_vec: Option<Vec<String>>;
+            if tags.is_some() {
+                let t = tags.unwrap();
+                let vec: Vec<&str> = t.split(",").collect();
+                let mut tv = Vec::<String>::new();
+                for v in vec {
+                    tv.push(v.to_string());
+                }
+                tags_vec = Some(tv);
+            } else {
+                tags_vec = None;
+            };
+
+            let note: Note = NoteManager::new(category, name, tags_vec, None);
+            note.init();
         }
     }
 }
