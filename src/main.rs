@@ -28,6 +28,24 @@ enum Commands {
         /// Tags associated with the new note, pass each seperated by a ,
         tags: Option<String>,
     },
+
+    /// Transfer a note to a new category
+    Transfer {
+        #[clap(short, long)]
+        /// The path of the note to transfer
+        path: String,
+
+        #[clap(short, long)]
+        /// The category of the note to transfer
+        category: String,
+    },
+
+    /// Archive a note
+    Archive {
+        #[clap(short, long)]
+        /// The path of the note to transfer
+        path: String,
+    },
 }
 
 fn main() {
@@ -54,6 +72,14 @@ fn main() {
 
             let note: Note = NoteManager::new(category, name, tags_vec, None);
             note.init();
+        }
+
+        Commands::Transfer { path, category } => {
+            _ = <Note as NoteManager>::transfer(path, category);
+        }
+
+        Commands::Archive { path } => {
+            _ = <Note as NoteManager>::transfer(path, "archive".to_string());
         }
     }
 }

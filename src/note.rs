@@ -1,5 +1,5 @@
 use chrono::{self, DateTime, Local};
-use std::fs::{self, File};
+use std::fs::{self, rename, File};
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -17,6 +17,10 @@ pub trait NoteManager {
         tags: Option<Vec<String>>,
         date: Option<DateTime<Local>>,
     ) -> Self;
+
+    fn from_path(path: String);
+
+    fn transfer(path: String, category: String);
 
     fn path(&self) -> PathBuf;
 
@@ -56,6 +60,24 @@ impl NoteManager for Note {
             category: c,
             date: d,
             tags: t,
+        };
+    }
+
+    fn from_path(path: String) {
+        let file_data = fs::read_to_string(path).expect("Cannot read the file.");
+    }
+
+    fn transfer(path: String, category: String) {
+        let path_clone = path.clone();
+        let file_path = PathBuf::from(path);
+        if file_path.is_dir() {
+            let current_category = path_clone.replace("/home/kcaverly/kb", "");
+            let name = current_category.split("/").last().unwrap();
+
+            let new_path =
+                path_clone.replace(&current_category, &format!("/{}/{}", &category, name));
+
+            rename(path_clone, new_path);
         };
     }
 
