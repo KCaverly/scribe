@@ -1,7 +1,7 @@
 mod note;
 
 use clap::{Parser, Subcommand};
-use note::{Note, NoteManager};
+use note::{search_notes, Note, NoteManager};
 
 #[derive(Debug, Parser)] // requires `derive` feature
 #[command(name = "pj")]
@@ -46,6 +46,12 @@ enum Commands {
         /// The path of the note to transfer
         path: String,
     },
+
+    /// Search
+    Search {
+        /// The Words to Search on
+        search_string: String,
+    },
 }
 
 fn main() {
@@ -80,6 +86,13 @@ fn main() {
 
         Commands::Archive { path } => {
             _ = <Note as NoteManager>::transfer(path, "archive".to_string());
+        }
+
+        Commands::Search { search_string } => {
+            let search_results = note::search_notes(search_string);
+            for res in search_results.unwrap() {
+                println!("{}:{}", res.0, res.1);
+            }
         }
     }
 }

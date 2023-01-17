@@ -1,7 +1,40 @@
 use chrono::{self, DateTime, Local};
+use grep_matcher::Matcher;
+use grep_regex::RegexMatcher;
+use grep_searcher::sinks::UTF8;
+use grep_searcher::Searcher;
+use std::error::Error;
 use std::fs::{self, rename, File};
 use std::io::Write;
 use std::path::PathBuf;
+use walkdir::WalkDir;
+
+pub fn search_notes(search_string: String) -> Result<(Vec<(String, String)>), Box<dyn Error>> {
+    let mut matches: Vec<(String, String)> = vec![];
+    for entry in WalkDir::new("/home/kcaverly/kb")
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        if entry.path().is_file() {
+            let file_data =
+                fs::read(entry.path().display().to_string()).expect("Cannot open file!");
+            let matcher = RegexMatcher::new(&search_string)?;
+            Searcher::new().search_slice(
+                &matcher,
+                &file_data,
+                UTF8(|lnum, line| {
+                    let mymatch = matcher.find(line.as_bytes())?.unwrap();
+                    matches.push((
+                        entry.path().display().to_string(),
+                        line[mymatch].to_string(),
+                    ));
+                    Ok(true)
+                }),
+            )?;
+        }
+    }
+    Ok(matches)
+}
 
 pub struct Note {
     category: String,
@@ -17,8 +50,6 @@ pub trait NoteManager {
         tags: Option<Vec<String>>,
         date: Option<DateTime<Local>>,
     ) -> Self;
-
-    fn from_path(path: String);
 
     fn transfer(path: String, category: String);
 
@@ -61,10 +92,6 @@ impl NoteManager for Note {
             date: d,
             tags: t,
         };
-    }
-
-    fn from_path(path: String) {
-        let file_data = fs::read_to_string(path).expect("Cannot read the file.");
     }
 
     fn transfer(path: String, category: String) {
