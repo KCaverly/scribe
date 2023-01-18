@@ -1,7 +1,7 @@
 mod note;
 
 use clap::{Parser, Subcommand};
-use note::Note;
+use note::{Note, NoteManager};
 
 #[derive(Debug, Parser)] // requires `derive` feature
 #[command(name = "pj")]
@@ -83,18 +83,18 @@ fn main() {
         }
 
         Commands::Transfer { path, category } => {
-            // _ = <Note as NoteManager>::transfer(path, category);
+            _ = Note::transfer(path, category);
         }
 
         Commands::Archive { path } => {
-            // _ = <Note as NoteManager>::transfer(path, "archive".to_string());
+            _ = Note::transfer(path, "archive".to_string());
         }
 
         Commands::Search { search_string } => {
-            // let search_results = note::search_notes(search_string);
-            // for res in search_results.unwrap() {
-            //     println!("{}:{}", res.0, res.1);
-            // }
+            let search_results = NoteManager::search_notes(search_string);
+            for res in search_results.unwrap() {
+                println!("{}  {}", res.0, res.1);
+            }
         }
     }
 }

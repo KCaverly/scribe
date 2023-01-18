@@ -122,9 +122,19 @@ impl Note {
             Some(date),
         );
 
-        println!("{:#?}", n);
-
         return n;
+    }
+
+    pub fn transfer(path: String, category: String) {
+        let path_clone = path.clone();
+        let file_path = PathBuf::from(path);
+        if file_path.is_dir() {
+            let current_category = path_clone.replace("/home/kcaverly/kb", "");
+            let name = current_category.split("/").last().unwrap();
+            let new_path =
+                path_clone.replace(&current_category, &format!("/{}/{}", &category, name));
+            rename(path_clone, new_path);
+        };
     }
 
     pub fn search_data(data: &[u8], search_string: String) -> Result<Vec<String>, Box<dyn Error>> {
@@ -142,7 +152,7 @@ impl Note {
         return Ok(matches);
     }
 
-    pub fn normalize_title(title: &str) -> String {
+    fn normalize_title(title: &str) -> String {
         return title.to_lowercase().replace(" ", "_");
     }
 
@@ -186,102 +196,35 @@ impl Note {
     }
 }
 
-// pub trait NoteManager {
-//     // fn new(
-//     //     category: Option<String>,
-//     //     name: String,
-//     //     tags: Option<Vec<String>>,
-//     //     date: Option<DateTime<Local>>,
-//     // ) -> Self;
-//
-//     fn transfer(path: String, category: String);
-//
-//     fn path(&self) -> PathBuf;
-//
-//     fn init(&self);
-// }
+pub struct NoteManager {}
 
-// impl NoteManager for Note {
-//     // fn new(
-//     //     category: Option<String>,
-//     //     name: String,
-//     //     tags: Option<Vec<String>>,
-//     //     date: Option<DateTime<Local>>,
-//     // ) -> Note {
-//     //     let c: String;
-//     //     if category.is_some() {
-//     //         c = category.unwrap();
-//     //     } else {
-//     //         c = "inbox".to_string();
-//     //     }
-//     //
-//     //     let t: Vec<String>;
-//     //     if tags.is_some() {
-//     //         t = tags.unwrap();
-//     //     } else {
-//     //         t = Vec::new();
-//     //     }
-//     //
-//     //     let d: DateTime<Local>;
-//     //     if date.is_some() {
-//     //         d = date.unwrap();
-//     //     } else {
-//     //         d = chrono::Local::now();
-//     //     }
-//     //
-//     //     return Note {
-//     //         name: name,
-//     //         category: c,
-//     //         date: d,
-//     //         tags: t,
-//     //     };
-//     // }
-//
-// fn transfer(path: String, category: String) {
-//     let path_clone = path.clone();
-//     let file_path = PathBuf::from(path);
-//     if file_path.is_dir() {
-//         let current_category = path_clone.replace("/home/kcaverly/kb", "");
-//         let name = current_category.split("/").last().unwrap();
-//
-//         let new_path = path_clone.replace(&current_category, &format!("/{}/{}", &category, name));
-//
-//         rename(path_clone, new_path);
-//     };
-// }
-//
-//
-// }
-//
-// // fn init(category: &str, title: &str, tags: Vec<&str>) {
-// //     let mut p = Self::get_path(category, title);
-// //     println!("{}", p.exists());
-// //
-// //     if !p.exists() {
-// //         // Create Directory if missing
-// //         if !p.parent().unwrap().exists() {
-// //             fs::create_dir(p.parent().unwrap());
-// //         }
-// //
-// //         // Create File
-// //         let mut f =
-// //             File::create(p.as_path().display().to_string()).expect("Unable to create file");
-// //
-// //         let date =
-// //         let dt_str = date.format("%Y-%m-%d %I:%M %p");
-// //
-// //         let mut init_str = vec![
-// //             format!("# {title}\n"),
-// //             format!("\n**Date:** {dt_str}  "),
-// //             format!("\n**Tags:**"),
-// //         ];
-// //
-// //         for tag in tags {
-// //             init_str.push(format!("#{tag} "));
-// //         }
-// //
-// //         let init_data = init_str.join("");
-// //
-// //         f.write_all(init_data.as_bytes());
-// //     }
-// // }
+impl NoteManager {
+    pub fn search_notes(search_string: String) -> Result<Vec<(String, String)>, Box<dyn Error>> {
+        println!("SEARCHING...");
+        let mut matches: Vec<(String, String)> = vec![];
+        for entry in WalkDir::new("/home/kcaverly/kb")
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
+            if entry.path().is_file() {
+                let file_data =
+                    fs::read(entry.path().display().to_string()).expect("Cannot open file!");
+                let matcher = RegexMatcher::new(&search_string)?;
+                Searcher::new().search_slice(
+                    &matcher,
+                    &file_data,
+                    UTF8(|lnum, line| {
+                        let mymatch = matcher.find(line.as_bytes())?.unwrap();
+                        matches.push((
+                            entry.path().display().to_string(),
+                            line[mymatch].to_string(),
+                        ));
+                        Ok(true)
+                    }),
+                )?;
+            }
+        }
+        println!("{}", "Hit Here!");
+        Ok(matches)
+    }
+}
