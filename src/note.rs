@@ -8,6 +8,8 @@ use std::fs::{self, rename, File};
 use std::io::Write;
 use std::path::PathBuf;
 use walkdir::WalkDir;
+use std::process::{Command,Stdio};
+use std::env;
 
 #[derive(Debug)]
 pub struct Note {
@@ -63,7 +65,7 @@ impl Note {
         let tag_vec = tags
             .trim()
             .split(" #")
-            .map(|s| s.trim_left_matches("#").to_string())
+            .map(|s| s.trim_start_matches("#").to_string())
             .collect();
 
         // Get Date
@@ -79,15 +81,15 @@ impl Note {
         // Get Category
         let file_name = Self::normalize_title(&title);
         let category = path_clone
-            .replace("/home/kcaverly/kb", "")
+            .replace(&NoteManager::get_notes_directory(), "")
             .replace(&file_name, "")
             .replace(".md", "");
 
         let n = Note::new(
             Some(
                 category
-                    .trim_right_matches("/")
-                    .trim_left_matches("/")
+                    .trim_end_matches("/")
+                    .trim_start_matches("/")
                     .to_string(),
             ),
             title.trim().to_string(),
@@ -102,7 +104,7 @@ impl Note {
         let path_clone = path.clone();
         let file_path = PathBuf::from(path);
         if file_path.is_dir() {
-            let current_category = path_clone.replace("/home/kcaverly/kb", "");
+            let current_category = path_clone.replace(&NoteManager::get_notes_directory(), "");
             let name = current_category.split("/").last().unwrap();
             let new_path =
                 path_clone.replace(&current_category, &format!("/{}/{}", &category, name));
@@ -131,13 +133,13 @@ impl Note {
 
     pub fn path(&self) -> PathBuf {
         let title = Self::normalize_title(&self.name);
-        let path = format!("{0}/{1}/{2}.md", "/home/kcaverly/kb", self.category, title);
+        let path = format!("{0}/{1}/{2}.md", &NoteManager::get_notes_directory(), self.category, title);
         return PathBuf::from(path);
     }
 
     pub fn init(&self) {
 
-        let mut p = self.path();
+        let p = self.path();
 
         if !p.exists() {
             println!("File Does not Exist!");
@@ -171,9 +173,20 @@ impl Note {
 pub struct NoteManager {}
 
 impl NoteManager {
+
+    pub fn get_notes_directory() -> String {
+        if env::var("NOTES_DIR").is_ok() {
+            let notes_dir = env::var("NOTES_DIR").unwrap();
+            return notes_dir;
+        } else {
+            panic!("Please set NOTES_DIR in your environment variables!");
+        }
+    }
+
     pub fn search_notes(search_string: String) -> Result<Vec<(String, String)>, Box<dyn Error>> {
         let mut matches: Vec<(String, String)> = vec![];
-        for entry in WalkDir::new("/home/kcaverly/kb")
+        let notes_dir = Self::get_notes_directory();
+        for entry in WalkDir::new(notes_dir)
             .into_iter()
             .filter_map(|e| e.ok())
         {
@@ -196,5 +209,26 @@ impl NoteManager {
             }
         }
         Ok(matches)
+    }
+
+    pub fn save_notes(commit_message: String) {
+        let notes_dir = Self::get_notes_directory();
+
+        // Add all notes to directory
+        for entry in WalkDir::new(&notes_dir).into_iter().filter_map(|e| e.ok()) {
+            if entry.path().is_file() {
+                let add = Command::new("git").current_dir(&notes_dir).args(vec!["add", &entry.path().display().to_string()]).status().unwrap();
+            }
+        }
+
+        // Commit notes to directory
+        let commit = Command::new("git").stdout(Stdio::null()).current_dir(&notes_dir).args(vec!["commit", "-m", &commit_message]).status().unwrap();
+
+        if commit.success() {
+            let push = Command::new("git").stdout(Stdio::null()).stderr(Stdio::null()).current_dir(&notes_dir).args(vec!["push"]).status().unwrap();
+            println!("Notes Saved!");
+        } else {
+            println!("No Change to Save!");
+        }
     }
 }

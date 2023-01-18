@@ -52,6 +52,12 @@ enum Commands {
         /// The Words to Search on
         search_string: String,
     },
+
+    /// Save Notes to Git
+    Save {
+        /// The Commit Message to Use
+        commit_message: Option<String>
+    }
 }
 
 fn main() {
@@ -79,7 +85,6 @@ fn main() {
             let note = Note::new(category, name, tags_vec, None);
             note.init();
 
-            let note2 = Note::from_path(note.path().display().to_string());
         }
 
         Commands::Transfer { path, category } => {
@@ -94,6 +99,14 @@ fn main() {
             let search_results = NoteManager::search_notes(search_string);
             for res in search_results.unwrap() {
                 println!("{}  {}", res.0, res.1);
+            }
+        }
+
+        Commands::Save { commit_message } => {
+            if commit_message.is_some() {
+                _ = NoteManager::save_notes(commit_message.unwrap());
+            } else {
+                _ = NoteManager::save_notes("(pj) Saving Notes...".to_string());
             }
         }
     }
