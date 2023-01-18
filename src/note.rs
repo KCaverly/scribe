@@ -9,33 +9,6 @@ use std::io::Write;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
-// pub fn search_notes(search_string: String) -> Result<(Vec<(String, String)>)>, Box<dyn Error>> {
-//     let mut matches: Vec<(String, String)> = vec![];
-//     for entry in WalkDir::new("/home/kcaverly/kb")
-//         .into_iter()
-//         .filter_map(|e| e.ok())
-//     {
-//         if entry.path().is_file() {
-//             let file_data =
-//                 fs::read(entry.path().display().to_string()).expect("Cannot open file!");
-//             let matcher = RegexMatcher::new(&search_string)?;
-//             Searcher::new().search_slice(
-//                 &matcher,
-//                 &file_data,
-//                 UTF8(|lnum, line| {
-//                     let mymatch = matcher.find(line.as_bytes())?.unwrap();
-//                     matches.push((
-//                         entry.path().display().to_string(),
-//                         line[mymatch].to_string(),
-//                     ));
-//                     Ok(true)
-//                 }),
-//             )?;
-//         }
-//     }
-//     Ok(matches)
-// }
-
 #[derive(Debug)]
 pub struct Note {
     category: String,
@@ -163,7 +136,6 @@ impl Note {
     }
 
     pub fn init(&self) {
-        println!("Initializing note: {}", self.name);
 
         let mut p = self.path();
 
@@ -200,7 +172,6 @@ pub struct NoteManager {}
 
 impl NoteManager {
     pub fn search_notes(search_string: String) -> Result<Vec<(String, String)>, Box<dyn Error>> {
-        println!("SEARCHING...");
         let mut matches: Vec<(String, String)> = vec![];
         for entry in WalkDir::new("/home/kcaverly/kb")
             .into_iter()
@@ -224,7 +195,6 @@ impl NoteManager {
                 )?;
             }
         }
-        println!("{}", "Hit Here!");
         Ok(matches)
     }
 }
