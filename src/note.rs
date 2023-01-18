@@ -1,4 +1,4 @@
-use chrono::{self, DateTime, Local};
+use chrono::{self, DateTime, Local, NaiveDateTime, TimeZone};
 use grep_matcher::Matcher;
 use grep_regex::RegexMatcher;
 use grep_searcher::sinks::UTF8;
@@ -9,33 +9,34 @@ use std::io::Write;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
-pub fn search_notes(search_string: String) -> Result<(Vec<(String, String)>), Box<dyn Error>> {
-    let mut matches: Vec<(String, String)> = vec![];
-    for entry in WalkDir::new("/home/kcaverly/kb")
-        .into_iter()
-        .filter_map(|e| e.ok())
-    {
-        if entry.path().is_file() {
-            let file_data =
-                fs::read(entry.path().display().to_string()).expect("Cannot open file!");
-            let matcher = RegexMatcher::new(&search_string)?;
-            Searcher::new().search_slice(
-                &matcher,
-                &file_data,
-                UTF8(|lnum, line| {
-                    let mymatch = matcher.find(line.as_bytes())?.unwrap();
-                    matches.push((
-                        entry.path().display().to_string(),
-                        line[mymatch].to_string(),
-                    ));
-                    Ok(true)
-                }),
-            )?;
-        }
-    }
-    Ok(matches)
-}
+// pub fn search_notes(search_string: String) -> Result<(Vec<(String, String)>)>, Box<dyn Error>> {
+//     let mut matches: Vec<(String, String)> = vec![];
+//     for entry in WalkDir::new("/home/kcaverly/kb")
+//         .into_iter()
+//         .filter_map(|e| e.ok())
+//     {
+//         if entry.path().is_file() {
+//             let file_data =
+//                 fs::read(entry.path().display().to_string()).expect("Cannot open file!");
+//             let matcher = RegexMatcher::new(&search_string)?;
+//             Searcher::new().search_slice(
+//                 &matcher,
+//                 &file_data,
+//                 UTF8(|lnum, line| {
+//                     let mymatch = matcher.find(line.as_bytes())?.unwrap();
+//                     matches.push((
+//                         entry.path().display().to_string(),
+//                         line[mymatch].to_string(),
+//                     ));
+//                     Ok(true)
+//                 }),
+//             )?;
+//         }
+//     }
+//     Ok(matches)
+// }
 
+#[derive(Debug)]
 pub struct Note {
     category: String,
     name: String,
@@ -43,28 +44,13 @@ pub struct Note {
     date: DateTime<Local>,
 }
 
-pub trait NoteManager {
-    fn new(
+impl Note {
+    pub fn new(
         category: Option<String>,
         name: String,
         tags: Option<Vec<String>>,
         date: Option<DateTime<Local>>,
-    ) -> Self;
-
-    fn transfer(path: String, category: String);
-
-    fn path(&self) -> PathBuf;
-
-    fn init(&self);
-}
-
-impl NoteManager for Note {
-    fn new(
-        category: Option<String>,
-        name: String,
-        tags: Option<Vec<String>>,
-        date: Option<DateTime<Local>>,
-    ) -> Note {
+    ) -> Self {
         let c: String;
         if category.is_some() {
             c = category.unwrap();
@@ -86,7 +72,7 @@ impl NoteManager for Note {
             d = chrono::Local::now();
         }
 
-        return Note {
+        return Self {
             name: name,
             category: c,
             date: d,
@@ -94,27 +80,79 @@ impl NoteManager for Note {
         };
     }
 
-    fn transfer(path: String, category: String) {
+    pub fn from_path(path: String) -> Self {
         let path_clone = path.clone();
-        let file_path = PathBuf::from(path);
-        if file_path.is_dir() {
-            let current_category = path_clone.replace("/home/kcaverly/kb", "");
-            let name = current_category.split("/").last().unwrap();
+        let data = fs::read(path).expect("Cannot open file!");
 
-            let new_path =
-                path_clone.replace(&current_category, &format!("/{}/{}", &category, name));
+        // Get Tags
+        let tag_line = Self::search_data(&data, "Tags:.+".to_string()).unwrap();
+        let tags = tag_line.last().unwrap().replace("Tags:**", "");
+        let tag_vec = tags
+            .trim()
+            .split(" #")
+            .map(|s| s.trim_left_matches("#").to_string())
+            .collect();
 
-            rename(path_clone, new_path);
-        };
+        // Get Date
+        let date_line = Self::search_data(&data, "Date:.+".to_string()).unwrap();
+        let date_str = date_line.last().unwrap().replace("Date:** ", "");
+        let naive = NaiveDateTime::parse_from_str(&date_str.trim(), "%Y-%m-%d %I:%M %p").unwrap();
+        let date: DateTime<Local> = Local.from_local_datetime(&naive).unwrap();
+
+        // Get title
+        let title_line = Self::search_data(&data, "^# .+".to_string()).unwrap();
+        let title = title_line.last().unwrap().replace("# ", "");
+
+        // Get Category
+        let file_name = Self::normalize_title(&title);
+        let category = path_clone
+            .replace("/home/kcaverly/kb", "")
+            .replace(&file_name, "")
+            .replace(".md", "");
+
+        let n = Note::new(
+            Some(
+                category
+                    .trim_right_matches("/")
+                    .trim_left_matches("/")
+                    .to_string(),
+            ),
+            title.trim().to_string(),
+            Some(tag_vec),
+            Some(date),
+        );
+
+        println!("{:#?}", n);
+
+        return n;
     }
 
-    fn path(&self) -> PathBuf {
-        let title = self.name.to_lowercase().replace(" ", "_");
+    pub fn search_data(data: &[u8], search_string: String) -> Result<Vec<String>, Box<dyn Error>> {
+        let mut matches: Vec<String> = vec![];
+        let matcher = RegexMatcher::new(&search_string)?;
+        Searcher::new().search_slice(
+            &matcher,
+            data,
+            UTF8(|lnum, line| {
+                let mymatch = matcher.find(line.as_bytes())?.unwrap();
+                matches.push(line[mymatch].to_string());
+                Ok(true)
+            }),
+        )?;
+        return Ok(matches);
+    }
+
+    pub fn normalize_title(title: &str) -> String {
+        return title.to_lowercase().replace(" ", "_");
+    }
+
+    pub fn path(&self) -> PathBuf {
+        let title = Self::normalize_title(&self.name);
         let path = format!("{0}/{1}/{2}.md", "/home/kcaverly/kb", self.category, title);
         return PathBuf::from(path);
     }
 
-    fn init(&self) {
+    pub fn init(&self) {
         println!("Initializing note: {}", self.name);
 
         let mut p = self.path();
@@ -148,35 +186,102 @@ impl NoteManager for Note {
     }
 }
 
-// fn init(category: &str, title: &str, tags: Vec<&str>) {
-//     let mut p = Self::get_path(category, title);
-//     println!("{}", p.exists());
+// pub trait NoteManager {
+//     // fn new(
+//     //     category: Option<String>,
+//     //     name: String,
+//     //     tags: Option<Vec<String>>,
+//     //     date: Option<DateTime<Local>>,
+//     // ) -> Self;
 //
-//     if !p.exists() {
-//         // Create Directory if missing
-//         if !p.parent().unwrap().exists() {
-//             fs::create_dir(p.parent().unwrap());
-//         }
+//     fn transfer(path: String, category: String);
 //
-//         // Create File
-//         let mut f =
-//             File::create(p.as_path().display().to_string()).expect("Unable to create file");
+//     fn path(&self) -> PathBuf;
 //
-//         let date =
-//         let dt_str = date.format("%Y-%m-%d %I:%M %p");
-//
-//         let mut init_str = vec![
-//             format!("# {title}\n"),
-//             format!("\n**Date:** {dt_str}  "),
-//             format!("\n**Tags:**"),
-//         ];
-//
-//         for tag in tags {
-//             init_str.push(format!("#{tag} "));
-//         }
-//
-//         let init_data = init_str.join("");
-//
-//         f.write_all(init_data.as_bytes());
-//     }
+//     fn init(&self);
 // }
+
+// impl NoteManager for Note {
+//     // fn new(
+//     //     category: Option<String>,
+//     //     name: String,
+//     //     tags: Option<Vec<String>>,
+//     //     date: Option<DateTime<Local>>,
+//     // ) -> Note {
+//     //     let c: String;
+//     //     if category.is_some() {
+//     //         c = category.unwrap();
+//     //     } else {
+//     //         c = "inbox".to_string();
+//     //     }
+//     //
+//     //     let t: Vec<String>;
+//     //     if tags.is_some() {
+//     //         t = tags.unwrap();
+//     //     } else {
+//     //         t = Vec::new();
+//     //     }
+//     //
+//     //     let d: DateTime<Local>;
+//     //     if date.is_some() {
+//     //         d = date.unwrap();
+//     //     } else {
+//     //         d = chrono::Local::now();
+//     //     }
+//     //
+//     //     return Note {
+//     //         name: name,
+//     //         category: c,
+//     //         date: d,
+//     //         tags: t,
+//     //     };
+//     // }
+//
+// fn transfer(path: String, category: String) {
+//     let path_clone = path.clone();
+//     let file_path = PathBuf::from(path);
+//     if file_path.is_dir() {
+//         let current_category = path_clone.replace("/home/kcaverly/kb", "");
+//         let name = current_category.split("/").last().unwrap();
+//
+//         let new_path = path_clone.replace(&current_category, &format!("/{}/{}", &category, name));
+//
+//         rename(path_clone, new_path);
+//     };
+// }
+//
+//
+// }
+//
+// // fn init(category: &str, title: &str, tags: Vec<&str>) {
+// //     let mut p = Self::get_path(category, title);
+// //     println!("{}", p.exists());
+// //
+// //     if !p.exists() {
+// //         // Create Directory if missing
+// //         if !p.parent().unwrap().exists() {
+// //             fs::create_dir(p.parent().unwrap());
+// //         }
+// //
+// //         // Create File
+// //         let mut f =
+// //             File::create(p.as_path().display().to_string()).expect("Unable to create file");
+// //
+// //         let date =
+// //         let dt_str = date.format("%Y-%m-%d %I:%M %p");
+// //
+// //         let mut init_str = vec![
+// //             format!("# {title}\n"),
+// //             format!("\n**Date:** {dt_str}  "),
+// //             format!("\n**Tags:**"),
+// //         ];
+// //
+// //         for tag in tags {
+// //             init_str.push(format!("#{tag} "));
+// //         }
+// //
+// //         let init_data = init_str.join("");
+// //
+// //         f.write_all(init_data.as_bytes());
+// //     }
+// // }
