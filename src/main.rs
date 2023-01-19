@@ -56,8 +56,8 @@ enum Commands {
     /// Save Notes to Git
     Save {
         /// The Commit Message to Use
-        commit_message: Option<String>
-    }
+        commit_message: Option<String>,
+    },
 }
 
 fn main() {
@@ -84,7 +84,6 @@ fn main() {
 
             let note = Note::new(category, name, tags_vec, None);
             note.init();
-
         }
 
         Commands::Transfer { path, category } => {

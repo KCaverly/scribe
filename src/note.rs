@@ -3,13 +3,13 @@ use grep_matcher::Matcher;
 use grep_regex::RegexMatcher;
 use grep_searcher::sinks::UTF8;
 use grep_searcher::Searcher;
+use std::env;
 use std::error::Error;
 use std::fs::{self, rename, File};
 use std::io::Write;
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use walkdir::WalkDir;
-use std::process::{Command,Stdio};
-use std::env;
 
 #[derive(Debug)]
 pub struct Note {
@@ -103,12 +103,19 @@ impl Note {
     pub fn transfer(path: String, category: String) {
         let path_clone = path.clone();
         let file_path = PathBuf::from(path);
+        println!("{}", file_path.as_path().display());
+        println!("{}", file_path.is_dir());
         if file_path.is_dir() {
             let current_category = path_clone.replace(&NoteManager::get_notes_directory(), "");
             let name = current_category.split("/").last().unwrap();
             let new_path =
                 path_clone.replace(&current_category, &format!("/{}/{}", &category, name));
-            rename(path_clone, new_path);
+
+            println!("{}:{}", path_clone, new_path);
+
+            rename(&path_clone, &new_path);
+
+            NoteManager::transfer_links(path_clone, new_path);
         };
     }
 
@@ -133,12 +140,16 @@ impl Note {
 
     pub fn path(&self) -> PathBuf {
         let title = Self::normalize_title(&self.name);
-        let path = format!("{0}/{1}/{2}.md", &NoteManager::get_notes_directory(), self.category, title);
+        let path = format!(
+            "{0}/{1}/{2}.md",
+            &NoteManager::get_notes_directory(),
+            self.category,
+            title
+        );
         return PathBuf::from(path);
     }
 
     pub fn init(&self) {
-
         let p = self.path();
 
         if !p.exists() {
@@ -173,7 +184,6 @@ impl Note {
 pub struct NoteManager {}
 
 impl NoteManager {
-
     pub fn get_notes_directory() -> String {
         if env::var("NOTES_DIR").is_ok() {
             let notes_dir = env::var("NOTES_DIR").unwrap();
@@ -186,10 +196,7 @@ impl NoteManager {
     pub fn search_notes(search_string: String) -> Result<Vec<(String, String)>, Box<dyn Error>> {
         let mut matches: Vec<(String, String)> = vec![];
         let notes_dir = Self::get_notes_directory();
-        for entry in WalkDir::new(notes_dir)
-            .into_iter()
-            .filter_map(|e| e.ok())
-        {
+        for entry in WalkDir::new(notes_dir).into_iter().filter_map(|e| e.ok()) {
             if entry.path().is_file() {
                 let file_data =
                     fs::read(entry.path().display().to_string()).expect("Cannot open file!");
@@ -217,18 +224,44 @@ impl NoteManager {
         // Add all notes to directory
         for entry in WalkDir::new(&notes_dir).into_iter().filter_map(|e| e.ok()) {
             if entry.path().is_file() {
-                let add = Command::new("git").current_dir(&notes_dir).args(vec!["add", &entry.path().display().to_string()]).status().unwrap();
+                let add = Command::new("git")
+                    .current_dir(&notes_dir)
+                    .args(vec!["add", &entry.path().display().to_string()])
+                    .status()
+                    .unwrap();
             }
         }
 
         // Commit notes to directory
-        let commit = Command::new("git").stdout(Stdio::null()).current_dir(&notes_dir).args(vec!["commit", "-m", &commit_message]).status().unwrap();
+        let commit = Command::new("git")
+            .stdout(Stdio::null())
+            .current_dir(&notes_dir)
+            .args(vec!["commit", "-m", &commit_message])
+            .status()
+            .unwrap();
 
         if commit.success() {
-            let push = Command::new("git").stdout(Stdio::null()).stderr(Stdio::null()).current_dir(&notes_dir).args(vec!["push"]).status().unwrap();
+            let push = Command::new("git")
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .current_dir(&notes_dir)
+                .args(vec!["push"])
+                .status()
+                .unwrap();
             println!("Notes Saved!");
         } else {
             println!("No Change to Save!");
+        }
+    }
+
+    pub fn transfer_links(old_path: String, new_path: String) {
+        println!("SEARCHING FOR LINKS!");
+        let results = Self::search_notes(old_path);
+        if results.is_ok() {
+            for res in results.unwrap() {
+                println!("{}: {}", res.0, res.1);
+
+            }
         }
     }
 }
