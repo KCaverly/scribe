@@ -1,6 +1,11 @@
 mod note;
+mod path;
+
+use std::env;
+use std::process::exit;
 
 use clap::{Parser, Subcommand};
+use lazy_static::lazy_static;
 use note::{Note, NoteManager};
 
 #[derive(Debug, Parser)] // requires `derive` feature
@@ -17,7 +22,7 @@ enum Commands {
     New {
         #[clap(short, long)]
         /// The title of the new note
-        name: String,
+        name: Option<String>,
 
         #[clap(short, long)]
         /// The Category of the new note.
@@ -27,17 +32,25 @@ enum Commands {
         #[clap(short, long)]
         /// Tags associated with the new note, pass each seperated by a ,
         tags: Option<String>,
+
+        /// Launch in Interactive Mode
+        #[clap(short, long, action)]
+        interactive: bool,
     },
 
     /// Transfer a note to a new category
     Transfer {
         #[clap(short, long)]
         /// The path of the note to transfer
-        path: String,
+        path: Option<String>,
 
         #[clap(short, long)]
         /// The category of the note to transfer
-        category: String,
+        category: Option<String>,
+
+        /// Launch in Interactive Mode
+        #[clap(short, long, action)]
+        interactive: bool,
     },
 
     /// Archive a note
@@ -53,14 +66,24 @@ enum Commands {
         search_string: String,
     },
 
-    /// Save Notes to Git
-    Save {
+    /// Sync Notes to Git
+    Sync {
         /// The Commit Message to Use
         commit_message: Option<String>,
     },
 }
 
+lazy_static! {
+    #[derive(Debug)]
+    static ref NOTES_DIR: String = env::var("NOTES_DIR").unwrap();
+}
+
 fn main() {
+    if env::var("NOTES_DIR").is_err() {
+        println!("Please set NOTES_DIR before continuing.");
+        exit(0)
+    }
+
     let args = Cli::parse();
 
     match args.command {
@@ -68,7 +91,17 @@ fn main() {
             name,
             category,
             tags,
+            interactive,
         } => {
+            if interactive {
+                NoteManager::interactive_create();
+            }
+
+            if !name.is_some() {
+                println!("Please provide a name for your note: `pj new --name <name>`");
+                exit(0);
+            }
+
             let tags_vec: Option<Vec<String>>;
             if tags.is_some() {
                 let t = tags.unwrap();
@@ -82,16 +115,37 @@ fn main() {
                 tags_vec = None;
             };
 
-            let note = Note::new(category, name, tags_vec, None);
+            let note = Note::new(category, name.unwrap(), tags_vec, None);
             note.init();
         }
 
-        Commands::Transfer { path, category } => {
-            _ = Note::transfer(path, category);
+        Commands::Transfer {
+            path,
+            category,
+            interactive,
+        } => {
+            if interactive {
+                NoteManager::interactive_transfer();
+                exit(0);
+            }
+
+            if path.is_none() {
+                println!(
+                    "Please provide a path for the file to transfer: `pj transfer --path <path>`"
+                );
+                exit(0);
+            }
+
+            if category.is_none() {
+                    println!("Please provide a category to transfer to: `pj transfer --category <category>`");
+                    exit(0);
+                }
+
+            _ = NoteManager::transfer(&path.unwrap(), &category.unwrap());
         }
 
         Commands::Archive { path } => {
-            _ = Note::transfer(path, "archive".to_string());
+            _ = NoteManager::transfer(&path, "archive");
         }
 
         Commands::Search { search_string } => {
@@ -101,11 +155,12 @@ fn main() {
             }
         }
 
-        Commands::Save { commit_message } => {
+        Commands::Sync { commit_message } => {
+            NoteManager::pull();
             if commit_message.is_some() {
-                _ = NoteManager::save_notes(commit_message.unwrap());
+                _ = NoteManager::save(&commit_message.unwrap());
             } else {
-                _ = NoteManager::save_notes("(pj) Saving Notes...".to_string());
+                _ = NoteManager::save("(pj) Saving Notes...");
             }
         }
     }

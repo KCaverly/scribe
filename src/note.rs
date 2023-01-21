@@ -1,13 +1,18 @@
+use crate::path::PJPath;
+use crate::NOTES_DIR;
+use casual;
 use chrono::{self, DateTime, Local, NaiveDateTime, TimeZone};
 use grep_matcher::Matcher;
 use grep_regex::RegexMatcher;
 use grep_searcher::sinks::UTF8;
 use grep_searcher::Searcher;
-use std::env;
+use skim::prelude::*;
 use std::error::Error;
 use std::fs::{self, rename, File};
+use std::io::Cursor;
 use std::io::Write;
 use std::path::PathBuf;
+use std::process::exit;
 use std::process::{Command, Stdio};
 use walkdir::WalkDir;
 
@@ -55,7 +60,7 @@ impl Note {
         };
     }
 
-    pub fn from_path(path: String) -> Self {
+    pub fn from_path(path: &str) -> Self {
         let path_clone = path.clone();
         let data = fs::read(path).expect("Cannot open file!");
 
@@ -81,7 +86,7 @@ impl Note {
         // Get Category
         let file_name = Self::normalize_title(&title);
         let category = path_clone
-            .replace(&NoteManager::get_notes_directory(), "")
+            .replace(&*NOTES_DIR, "")
             .replace(&file_name, "")
             .replace(".md", "");
 
@@ -100,25 +105,6 @@ impl Note {
         return n;
     }
 
-    pub fn transfer(path: String, category: String) {
-        let path_clone = path.clone();
-        let file_path = PathBuf::from(path);
-        println!("{}", file_path.as_path().display());
-        println!("{}", file_path.is_dir());
-        if file_path.is_dir() {
-            let current_category = path_clone.replace(&NoteManager::get_notes_directory(), "");
-            let name = current_category.split("/").last().unwrap();
-            let new_path =
-                path_clone.replace(&current_category, &format!("/{}/{}", &category, name));
-
-            println!("{}:{}", path_clone, new_path);
-
-            rename(&path_clone, &new_path);
-
-            NoteManager::transfer_links(path_clone, new_path);
-        };
-    }
-
     pub fn search_data(data: &[u8], search_string: String) -> Result<Vec<String>, Box<dyn Error>> {
         let mut matches: Vec<String> = vec![];
         let matcher = RegexMatcher::new(&search_string)?;
@@ -134,18 +120,17 @@ impl Note {
         return Ok(matches);
     }
 
+    pub fn filepath(&self) -> String {
+        return format!("{}.md", self.name.to_lowercase().replace(" ", "_"));
+    }
+
     fn normalize_title(title: &str) -> String {
         return title.to_lowercase().replace(" ", "_");
     }
 
     pub fn path(&self) -> PathBuf {
         let title = Self::normalize_title(&self.name);
-        let path = format!(
-            "{0}/{1}/{2}.md",
-            &NoteManager::get_notes_directory(),
-            self.category,
-            title
-        );
+        let path = format!("{0}/{1}/{2}.md", &*NOTES_DIR, self.category, title);
         return PathBuf::from(path);
     }
 
@@ -184,19 +169,139 @@ impl Note {
 pub struct NoteManager {}
 
 impl NoteManager {
-    pub fn get_notes_directory() -> String {
-        if env::var("NOTES_DIR").is_ok() {
-            let notes_dir = env::var("NOTES_DIR").unwrap();
-            return notes_dir;
-        } else {
-            panic!("Please set NOTES_DIR in your environment variables!");
+    pub fn interactive_create() -> String {
+        println!("Creating new note...\n");
+
+        // Get Name of Note
+        let name: String = casual::prompt("Name of the Note:    ").get();
+
+        // Get Category of Note
+        let category: String = casual::prompt("Category of Note:    ").get();
+
+        // Get Tags Associated With Note
+        let tags: String = casual::prompt("Tags for Note:       ")
+            .default("".to_string())
+            .get();
+
+        // let note = Note::new(Some(category), name, Some(tags), None);
+        // note.init();
+
+        return "".to_string();
+
+        // return note.path().display().to_string();
+    }
+
+    pub fn interactive_transfer() {
+        println!("Transfering Notes...");
+        let paths = Self::get_paths();
+
+        // Get List of Items to Select On
+        let mut items: Vec<String> = vec![];
+        // Get Categories to Transfer To
+        let mut categories: Vec<String> = vec![];
+
+        for path in paths {
+            items.push(path.relative_path());
+
+            let cat = path.category;
+            if !categories.contains(&cat) {
+                println!("CATEGORY: {}", &cat);
+                categories.push(cat);
+            }
         }
+
+        let selected_items = Self::finder(items, "Item to Transfer:  ", true);
+        let items_clone = selected_items.clone();
+        let selected_category = Self::finder(categories, "Target Category:  ", false);
+
+        let target_category = selected_category.first().unwrap();
+
+        println!("Transfering...\n");
+        for item in selected_items {
+            println!("{}", item.text());
+        }
+
+        println!("\nTO: {}\n", target_category.text());
+
+        if casual::confirm("Confirm?") {
+            for item in items_clone {
+                Self::transfer(&item.text(), &target_category.text());
+            }
+        }
+    }
+
+    pub fn finder(
+        search_options: Vec<String>,
+        prompt: &str,
+        multi: bool,
+    ) -> Vec<Arc<dyn SkimItem>> {
+        let search_string: String = search_options.join("\n");
+        let options = SkimOptionsBuilder::default()
+            .prompt(Some(prompt))
+            .multi(multi)
+            .build()
+            .unwrap();
+
+        let item_reader = SkimItemReader::default();
+        let items = item_reader.of_bufread(Cursor::new(search_string));
+        let selected_items = Skim::run_with(&options, Some(items))
+            .filter(|out| !out.is_abort)
+            .map(|out| out.selected_items)
+            .unwrap_or_else(|| Vec::new());
+
+        // If no item selected, exit silently.
+        if selected_items.len() == 0 {
+            exit(0)
+        }
+
+        return selected_items;
+    }
+
+    pub fn get_paths() -> Vec<PJPath> {
+        let mut paths: Vec<PJPath> = vec![];
+        for entry in WalkDir::new(&*NOTES_DIR).into_iter().filter_map(|e| e.ok()) {
+            if !entry.path().display().to_string().contains(".git") {
+                let path = PJPath::parse(&entry.path().display().to_string());
+                paths.push(path);
+            }
+        }
+        return paths;
+    }
+
+    // TODO: Accomodate for relative paths here
+    pub fn transfer(path: &str, category: &str) -> std::io::Result<()> {
+        // Transfer File Over
+        let old_path = PJPath::parse(path);
+        let mut new_path = PJPath::parse(path);
+        new_path.replace_category(category);
+
+        if !old_path.exists() {
+            return Ok(());
+        }
+
+        rename(&old_path.path, &new_path.path)?;
+
+        // Transfer Links
+        let results = Self::search_notes(format!("[A-Z0-9a-z/]+?{}", old_path.relative_path()));
+        if results.is_ok() {
+            for res in results.unwrap() {
+                let og_data = fs::read_to_string(&res.0).unwrap();
+                let new_data = og_data.replace(&res.1, &new_path.relative_path());
+
+                let mut f = std::fs::OpenOptions::new()
+                    .write(true)
+                    .truncate(true)
+                    .open(&res.0)?;
+                f.write_all(new_data.as_bytes())?;
+                f.flush()?;
+            }
+        }
+        Ok(())
     }
 
     pub fn search_notes(search_string: String) -> Result<Vec<(String, String)>, Box<dyn Error>> {
         let mut matches: Vec<(String, String)> = vec![];
-        let notes_dir = Self::get_notes_directory();
-        for entry in WalkDir::new(notes_dir).into_iter().filter_map(|e| e.ok()) {
+        for entry in WalkDir::new(&*NOTES_DIR).into_iter().filter_map(|e| e.ok()) {
             if entry.path().is_file() {
                 let file_data =
                     fs::read(entry.path().display().to_string()).expect("Cannot open file!");
@@ -218,14 +323,20 @@ impl NoteManager {
         Ok(matches)
     }
 
-    pub fn save_notes(commit_message: String) {
-        let notes_dir = Self::get_notes_directory();
+    pub fn pull() {
+        let pull = Command::new("git")
+            .current_dir(&*NOTES_DIR)
+            .args(vec!["pull"])
+            .status()
+            .unwrap();
+    }
 
+    pub fn save(commit_message: &str) {
         // Add all notes to directory
-        for entry in WalkDir::new(&notes_dir).into_iter().filter_map(|e| e.ok()) {
+        for entry in WalkDir::new(&*NOTES_DIR).into_iter().filter_map(|e| e.ok()) {
             if entry.path().is_file() {
                 let add = Command::new("git")
-                    .current_dir(&notes_dir)
+                    .current_dir(&*NOTES_DIR)
                     .args(vec!["add", &entry.path().display().to_string()])
                     .status()
                     .unwrap();
@@ -235,7 +346,7 @@ impl NoteManager {
         // Commit notes to directory
         let commit = Command::new("git")
             .stdout(Stdio::null())
-            .current_dir(&notes_dir)
+            .current_dir(&*NOTES_DIR)
             .args(vec!["commit", "-m", &commit_message])
             .status()
             .unwrap();
@@ -244,24 +355,13 @@ impl NoteManager {
             let push = Command::new("git")
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
-                .current_dir(&notes_dir)
+                .current_dir(&*NOTES_DIR)
                 .args(vec!["push"])
                 .status()
                 .unwrap();
             println!("Notes Saved!");
         } else {
             println!("No Change to Save!");
-        }
-    }
-
-    pub fn transfer_links(old_path: String, new_path: String) {
-        println!("SEARCHING FOR LINKS!");
-        let results = Self::search_notes(old_path);
-        if results.is_ok() {
-            for res in results.unwrap() {
-                println!("{}: {}", res.0, res.1);
-
-            }
         }
     }
 }
