@@ -95,6 +95,7 @@ fn main() {
         } => {
             if interactive {
                 NoteManager::interactive_create();
+                exit(0);
             }
 
             if !name.is_some() {
@@ -102,18 +103,7 @@ fn main() {
                 exit(0);
             }
 
-            let tags_vec: Option<Vec<String>>;
-            if tags.is_some() {
-                let t = tags.unwrap();
-                let vec: Vec<&str> = t.split(",").collect();
-                let mut tv = Vec::<String>::new();
-                for v in vec {
-                    tv.push(v.to_string());
-                }
-                tags_vec = Some(tv);
-            } else {
-                tags_vec = None;
-            };
+            let tags_vec = Note::parse_tags(tags);
 
             let note = Note::new(category, name.unwrap(), tags_vec, None);
             note.init();
@@ -137,9 +127,11 @@ fn main() {
             }
 
             if category.is_none() {
-                    println!("Please provide a category to transfer to: `pj transfer --category <category>`");
-                    exit(0);
-                }
+                println!(
+                    "Please provide a category to transfer to: `pj transfer --category <category>`"
+                );
+                exit(0);
+            }
 
             _ = NoteManager::transfer(&path.unwrap(), &category.unwrap());
         }

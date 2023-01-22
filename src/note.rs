@@ -25,6 +25,23 @@ pub struct Note {
 }
 
 impl Note {
+    pub fn parse_tags(tags: Option<String>) -> Option<Vec<String>> {
+        let tags_vec: Option<Vec<String>>;
+        if tags.is_some() {
+            let t = tags.unwrap();
+            let vec: Vec<&str> = t.split(",").collect();
+            let mut tv = Vec::<String>::new();
+            for v in vec {
+                tv.push(v.trim().to_string());
+            }
+            tags_vec = Some(tv);
+        } else {
+            tags_vec = None;
+        };
+
+        return tags_vec;
+    }
+
     pub fn new(
         category: Option<String>,
         name: String,
@@ -183,12 +200,14 @@ impl NoteManager {
             .default("".to_string())
             .get();
 
-        // let note = Note::new(Some(category), name, Some(tags), None);
-        // note.init();
+        let tags_vec = Note::parse_tags(Some(tags));
 
-        return "".to_string();
+        println!("{}", name);
 
-        // return note.path().display().to_string();
+        let note = Note::new(Some(category), name, tags_vec, None);
+        note.init();
+
+        return note.path().as_path().display().to_string();
     }
 
     pub fn interactive_transfer() {
@@ -201,11 +220,10 @@ impl NoteManager {
         let mut categories: Vec<String> = vec![];
 
         for path in paths {
-            items.push(path.relative_path());
+            items.push(path.path);
 
             let cat = path.category;
             if !categories.contains(&cat) {
-                println!("CATEGORY: {}", &cat);
                 categories.push(cat);
             }
         }
