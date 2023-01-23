@@ -36,6 +36,10 @@ enum Commands {
         /// Launch in Interactive Mode
         #[clap(short, long, action)]
         interactive: bool,
+
+        /// Launch editor after creation
+        #[clap(short, long, action)]
+        edit: bool,
     },
 
     /// Transfer a note to a new category
@@ -92,9 +96,14 @@ fn main() {
             category,
             tags,
             interactive,
+            edit,
         } => {
             if interactive {
-                NoteManager::interactive_create();
+                let note = NoteManager::interactive_create();
+                if edit {
+                    note.edit();
+                }
+
                 exit(0);
             }
 
@@ -107,6 +116,10 @@ fn main() {
 
             let note = Note::new(category, name.unwrap(), tags_vec, None);
             note.init();
+
+            if edit {
+                note.edit();
+            }
         }
 
         Commands::Transfer {

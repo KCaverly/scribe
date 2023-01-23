@@ -7,6 +7,7 @@ use grep_regex::RegexMatcher;
 use grep_searcher::sinks::UTF8;
 use grep_searcher::Searcher;
 use skim::prelude::*;
+use std::env;
 use std::error::Error;
 use std::fs::{self, rename, File};
 use std::io::Cursor;
@@ -25,6 +26,24 @@ pub struct Note {
 }
 
 impl Note {
+    pub fn edit(&self) {
+        let editor_var: String;
+        if env::var("EDITOR").is_ok() {
+            editor_var = env::var("EDITOR").unwrap();
+        } else {
+            println!("PLEASE SET $EDITOR TO LAUNCH EDITOR");
+            exit(0);
+        }
+
+        let mut editor = Command::new(editor_var)
+            .arg(self.path().as_path().display().to_string())
+            .current_dir(&*NOTES_DIR)
+            .spawn()
+            .unwrap();
+
+        let _res = editor.wait().unwrap();
+    }
+
     pub fn parse_tags(tags: Option<String>) -> Option<Vec<String>> {
         let tags_vec: Option<Vec<String>>;
         if tags.is_some() {
@@ -155,8 +174,6 @@ impl Note {
         let p = self.path();
 
         if !p.exists() {
-            println!("File Does not Exist!");
-
             // Create directory if missing
             if !p.parent().unwrap().exists() {
                 _ = fs::create_dir(p.parent().unwrap());
@@ -186,7 +203,7 @@ impl Note {
 pub struct NoteManager {}
 
 impl NoteManager {
-    pub fn interactive_create() -> String {
+    pub fn interactive_create() -> Note {
         println!("Creating new note...\n");
 
         // Get Name of Note
@@ -207,7 +224,7 @@ impl NoteManager {
         let note = Note::new(Some(category), name, tags_vec, None);
         note.init();
 
-        return note.path().as_path().display().to_string();
+        return note;
     }
 
     pub fn interactive_transfer() {
