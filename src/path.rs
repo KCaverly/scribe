@@ -80,4 +80,8 @@ impl ScribePath {
     pub fn as_pathbuf(&self) -> PathBuf {
         return PathBuf::from(path);
     }
+
+    pub fn replace_category(&self, category: &str) {
+        self.category = category.to_string();
+    }
 }
