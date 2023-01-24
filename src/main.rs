@@ -9,7 +9,7 @@ use lazy_static::lazy_static;
 use note::{Note, NoteManager};
 
 #[derive(Debug, Parser)] // requires `derive` feature
-#[command(name = "pj")]
+#[command(name = "scribe")
 #[command(about = "A Smart Notes Manager", long_about = None)]
 struct Cli {
     #[command(subcommand)]

@@ -1,4 +1,4 @@
-use crate::path::PJPath;
+use crate::path::ScribePath;
 use crate::NOTES_DIR;
 use casual;
 use chrono::{self, DateTime, Local, NaiveDateTime, TimeZone};
@@ -292,11 +292,11 @@ impl NoteManager {
         return selected_items;
     }
 
-    pub fn get_paths() -> Vec<PJPath> {
-        let mut paths: Vec<PJPath> = vec![];
+    pub fn get_paths() -> Vec<ScribePath> {
+        let mut paths: Vec<ScribePath> = vec![];
         for entry in WalkDir::new(&*NOTES_DIR).into_iter().filter_map(|e| e.ok()) {
             if !entry.path().display().to_string().contains(".git") {
-                let path = PJPath::parse(&entry.path().display().to_string());
+                let path = ScribePath::parse(&entry.path().display().to_string());
                 paths.push(path);
             }
         }
@@ -306,8 +306,8 @@ impl NoteManager {
     // TODO: Accomodate for relative paths here
     pub fn transfer(path: &str, category: &str) -> std::io::Result<()> {
         // Transfer File Over
-        let old_path = PJPath::parse(path);
-        let mut new_path = PJPath::parse(path);
+        let old_path = ScribePath::parse(path);
+        let mut new_path = ScribePath::parse(path);
         new_path.replace_category(category);
 
         if !old_path.exists() {
