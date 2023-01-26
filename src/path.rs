@@ -26,9 +26,16 @@ impl ScribePath {
     }
 
     pub fn from(path: &str) -> Self {
-        self.path = Self::get_absolute(path);
-        self.category = Self::get_category(path);
-        self.base = Self::get_base(path);
+
+        let scribe_path = Self::get_absolute(path);
+        let category = Self::get_category(path);
+        let base = Self::get_base(path);
+
+        return Self {
+            path: scribe_path,
+            category: category,
+            base: base
+        };
     }
 
     // Private Methods
@@ -53,8 +60,8 @@ impl ScribePath {
     fn get_category(path: &str) -> String {
         let relative_path = Self::get_relative(path);
         let base = Self::get_base(path);
-        let category = relative_path
-            .replace(base, "")
+        let binding = relative_path.replace(&base, "");
+        let category = binding
             .trim_start_matches("/")
             .trim_end_matches("/");
         return category.to_string();
@@ -71,17 +78,17 @@ impl ScribePath {
 
     pub fn as_string(&self, absolute: bool) -> String {
         if absolute {
-            return self.get_absolute(self.path);
+            return Self::get_absolute(&self.path);
         } else {
-            return self.get_relative(self.path);
+            return Self::get_relative(&self.path);
         }
     }
 
     pub fn as_pathbuf(&self) -> PathBuf {
-        return PathBuf::from(path);
+        return PathBuf::from(&self.path);
     }
 
-    pub fn replace_category(&self, category: &str) {
+    pub fn replace_category(&mut self, category: &str) {
         self.category = category.to_string();
     }
 }

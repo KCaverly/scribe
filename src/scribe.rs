@@ -1,14 +1,25 @@
 use crate::note::Note;
 use crate::path::ScribePath;
-use std::fs::rename;
+use crate::NOTES_DIR;
+use std::error::Error;
+use std::fs::{self, rename};
+use skim::prelude::*;
+use grep_matcher::Matcher;
+use grep_regex::RegexMatcher;
+use grep_searcher::sinks::UTF8;
+use grep_searcher::Searcher;
+use walkdir::WalkDir;
+use std::io::Write;
 
 pub struct Scribe {}
 
 impl Scribe {
     // Public Functions
-    pub fn create(title: String, category: Option<String>, tags: Option<Vec<String>>) {
+    pub fn create(title: String, category: Option<String>, tags: Option<Vec<String>>) -> Note {
         let note = Note::new(title, category, tags);
         note.init();
+
+        return note;
     }
 
     pub fn transfer(path: &str, category: &str) -> std::io::Result<()> {
@@ -22,15 +33,15 @@ impl Scribe {
             return Ok(());
         }
 
-        rename(&old_path.as_string(), &new_path.as_string());
+        rename(&old_path.as_string(true), &new_path.as_string(true));
 
         // Transfer Links
-        let results = Self::search(format!("[A-Za-z0-9/]+?{}", old_path.as_string(false)));
+        let results = Self::search(&format!("[A-Za-z0-9/]+?{}", old_path.as_string(false)));
         if results.is_ok() {
             for res in results.unwrap() {
                 // TODO: Move this into a note::Note public function
                 let og_data = fs::read_to_string(&res.0).unwrap();
-                let new_data = og_data.replace(&res.1, &new_path.relative_path());
+                let new_data = og_data.replace(&res.1, &new_path.as_string(false));
 
                 let mut f = std::fs::OpenOptions::new()
                     .write(true)
@@ -43,7 +54,7 @@ impl Scribe {
         Ok(())
     }
 
-    pub fn interactive_create() {
+    pub fn interactive_create() -> Note{
         unimplemented!("Interactive Create not yet implemented!");
     }
 
@@ -80,6 +91,7 @@ impl Scribe {
         prompt: &str,
         multi: bool,
     ) -> Vec<Arc<dyn SkimItem>> {
+        unimplemented!("Fuzzy Finder Not yet Implemented!");
     }
 
     pub fn pull() -> bool {
@@ -88,5 +100,9 @@ impl Scribe {
 
     pub fn save(commit_message: &str) -> bool {
         unimplemented!("Git Push not yet implemented!");
+    }
+
+    pub fn sync(commit_message: Option<String>) -> bool {
+        unimplemented!("Git Sync not yet implemented!");
     }
 }
