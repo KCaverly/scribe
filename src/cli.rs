@@ -1,5 +1,5 @@
-use crate::scribe::Scribe;
 use crate::note::Note;
+use crate::scribe::Scribe;
 use clap::{Parser, Subcommand};
 use std::process::exit;
 
@@ -13,7 +13,6 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-
     /// Create a new note
     New {
         /// The title of the new note
@@ -34,8 +33,7 @@ enum Commands {
 
         /// Launch editor after creation
         #[clap(short, long, action)]
-        edit: bool
-
+        edit: bool,
     },
 
     /// Transfer a note to a new category
@@ -63,7 +61,7 @@ enum Commands {
     Search {
         /// The Words to Search On
         #[clap(short, long)]
-        search_string: String
+        search_string: String,
     },
 
     /// Sync Notes to Git
@@ -71,35 +69,13 @@ enum Commands {
         /// The Commit Message to Use
         #[clap(short, long)]
         commit_message: Option<String>,
-    }
-
-}
-
-fn parse_cli_tags(tags: Option<String>) -> Option<Vec<String>> {
-
-    let tags_vec: Option<Vec<String>>;
-    if tags.is_some() {
-        let t = tags.unwrap();
-        let vec: Vec<&str> = t.split(",").collect();
-        let mut tv = Vec::<String>::new();
-        for v in vec {
-            tv.push(v.trim().to_string());
-        }
-        tags_vec = Some(tv);
-    } else {
-        tags_vec = None; 
-    };
-
-    return tags_vec
-    
+    },
 }
 
 pub fn run_cli() {
-
     let args = Cli::parse();
 
     match args.command {
-        
         Commands::New {
             name,
             category,
@@ -117,7 +93,7 @@ pub fn run_cli() {
                 }
 
                 // TODO: I Dont think we should be access Note here
-                let tags_vec = parse_cli_tags(tags);
+                let tags_vec = Scribe::parse_tags_string(tags);
                 note = Scribe::create(name.unwrap(), category, tags_vec);
             }
 
@@ -131,7 +107,6 @@ pub fn run_cli() {
             category,
             interactive,
         } => {
-            
             if interactive {
                 Scribe::interactive_transfer();
             } else {
@@ -146,16 +121,14 @@ pub fn run_cli() {
                 }
 
                 Scribe::transfer(&path.unwrap(), &category.unwrap());
-
             }
-
         }
 
         Commands::Archive { path } => {
             Scribe::transfer(&path, "archive");
         }
 
-        Commands::Search {search_string } => {
+        Commands::Search { search_string } => {
             let search_results = Scribe::search(&search_string);
             for res in search_results.unwrap() {
                 println!("{}  {}", res.0, res.1);
@@ -165,7 +138,5 @@ pub fn run_cli() {
         Commands::Sync { commit_message } => {
             Scribe::sync(commit_message);
         }
-
-
     }
 }

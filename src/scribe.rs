@@ -1,15 +1,17 @@
 use crate::note::Note;
 use crate::path::ScribePath;
 use crate::NOTES_DIR;
-use std::error::Error;
-use std::fs::{self, rename};
-use skim::prelude::*;
 use grep_matcher::Matcher;
 use grep_regex::RegexMatcher;
 use grep_searcher::sinks::UTF8;
 use grep_searcher::Searcher;
-use walkdir::WalkDir;
+use skim::prelude::*;
+use std::error::Error;
+use std::fs::{self, rename};
+use std::io::Cursor;
 use std::io::Write;
+use std::process::exit;
+use walkdir::WalkDir;
 
 pub struct Scribe {}
 
@@ -54,12 +56,66 @@ impl Scribe {
         Ok(())
     }
 
-    pub fn interactive_create() -> Note{
-        unimplemented!("Interactive Create not yet implemented!");
+    pub fn interactive_create() -> Note {
+        println!("Creating new note...\n");
+
+        // Get Name of Note
+        let name: String = casual::prompt("Name of the Note:    ").get();
+
+        // Get Category of Note
+        let category: String = casual::prompt("Category of Note:    ").get();
+
+        // Get Tags Associated With Note
+        let tags: String = casual::prompt("Tags for Note:       ")
+            .default("".to_string())
+            .get();
+
+        let tags_vec = Self::parse_tags_string(Some(tags));
+
+        println!("{}", name);
+
+        let note = Note::new(name, Some(category), tags_vec);
+        note.init();
+
+        return note;
     }
 
     pub fn interactive_transfer() {
-        unimplemented!("Interactive Transfer not yet implemented!");
+        println!("Transfering Notes...");
+        let paths = Self::get_paths();
+
+        // Get List of Items to Select On
+        let mut items: Vec<String> = vec![];
+        // Get Categories to Transfer To
+        let mut categories: Vec<String> = vec![];
+
+        for path in paths {
+            items.push(path.path);
+
+            let cat = path.category;
+            if !categories.contains(&cat) {
+                categories.push(cat);
+            }
+        }
+
+        let selected_items = Self::fuzzy_finder(items, "Item to Transfer:  ", true);
+        let items_clone = selected_items.clone();
+        let selected_category = Self::fuzzy_finder(categories, "Target Category:  ", false);
+
+        let target_category = selected_category.first().unwrap();
+
+        println!("Transfering...\n");
+        for item in selected_items {
+            println!("{}", item.text());
+        }
+
+        println!("\nTO: {}\n", target_category.text());
+
+        if casual::confirm("Confirm?") {
+            for item in items_clone {
+                Self::transfer(&item.text(), &target_category.text());
+            }
+        }
     }
 
     pub fn search(search_string: &str) -> Result<Vec<(String, String)>, Box<dyn Error>> {
@@ -86,12 +142,48 @@ impl Scribe {
         Ok(matches)
     }
 
+    pub fn parse_tags_string(tags: Option<String>) -> Option<Vec<String>> {
+        let tags_vec: Option<Vec<String>>;
+        if tags.is_some() {
+            let t = tags.unwrap();
+            let vec: Vec<&str> = t.split(",").collect();
+            let mut tv = Vec::<String>::new();
+            for v in vec {
+                tv.push(v.trim().to_string());
+            }
+            tags_vec = Some(tv);
+        } else {
+            tags_vec = None;
+        };
+
+        return tags_vec;
+    }
+
     pub fn fuzzy_finder(
         search_options: Vec<String>,
         prompt: &str,
         multi: bool,
     ) -> Vec<Arc<dyn SkimItem>> {
-        unimplemented!("Fuzzy Finder Not yet Implemented!");
+        let search_string: String = search_options.join("\n");
+        let options = SkimOptionsBuilder::default()
+            .prompt(Some(prompt))
+            .multi(multi)
+            .build()
+            .unwrap();
+
+        let item_reader = SkimItemReader::default();
+        let items = item_reader.of_bufread(Cursor::new(search_string));
+        let selected_items = Skim::run_with(&options, Some(items))
+            .filter(|out| !out.is_abort)
+            .map(|out| out.selected_items)
+            .unwrap_or_else(|| Vec::new());
+
+        // If no item selected, exit silently.
+        if selected_items.len() == 0 {
+            exit(0)
+        }
+
+        return selected_items;
     }
 
     pub fn pull() -> bool {
@@ -104,5 +196,18 @@ impl Scribe {
 
     pub fn sync(commit_message: Option<String>) -> bool {
         unimplemented!("Git Sync not yet implemented!");
+    }
+
+    fn get_paths() -> Vec<ScribePath> {
+        let mut paths: Vec<ScribePath> = vec![];
+        for entry in WalkDir::new(&*NOTES_DIR).into_iter().filter_map(|e| e.ok()) {
+            if !entry.path().display().to_string().contains(".git") {
+                let path = ScribePath::from(&entry.path().display().to_string());
+                if path.is_valid() {
+                    paths.push(path);
+                }
+            }
+        }
+        return paths;
     }
 }

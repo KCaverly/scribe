@@ -1,10 +1,9 @@
 use crate::path::ScribePath;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 
-use std::fs::{self, File};
 use std::error::Error;
+use std::fs::{self, File};
 use std::io::Write;
-
 // For Searching
 use grep_matcher::Matcher;
 use grep_regex::RegexMatcher;
@@ -69,8 +68,8 @@ impl Note {
             category: scribe_path.category.to_string(),
             date: date,
             tags: tags,
-            path: scribe_path
-        }
+            path: scribe_path,
+        };
     }
 
     // Private Methods
@@ -91,13 +90,21 @@ impl Note {
     }
 
     fn get_file_name(&self) -> String {
-        return self.path.base.to_string();
+        if self.path.base.is_some() {
+            return self.path.base.as_ref().unwrap().to_string();
+        } else {
+            panic!("This has no file name!");
+        }
     }
 
     fn parse_tags(data: &[u8]) -> Vec<String> {
         let tag_line = Self::search_data(data, "Tags:.+".to_string()).unwrap();
         let tags = tag_line.last().unwrap().replace("Tags:**", "");
-        let tag_vec = tags.trim().split(" #").map(|s| s.trim_start_matches("#").to_string()).collect();
+        let tag_vec = tags
+            .trim()
+            .split(" #")
+            .map(|s| s.trim_start_matches("#").to_string())
+            .collect();
         return tag_vec;
     }
 
@@ -121,7 +128,6 @@ impl Note {
     pub fn init(&self) {
         let p = self.path.as_pathbuf();
         if !p.exists() {
-
             // Create directory if missing
             if !p.parent().unwrap().exists() {
                 _ = fs::create_dir(p.parent().unwrap());
@@ -142,14 +148,12 @@ impl Note {
 
             let init_data = init_str.join("");
             _ = file.write_all(init_data.trim().as_bytes());
-
         }
     }
 
     pub fn search_match(&self, match_string: String) -> Result<Vec<String>, Box<dyn Error>> {
         unimplemented!("Regex Matching not yet implemented!");
     }
-
 
     pub fn search(&self, search_string: String) -> Result<Vec<String>, Box<dyn Error>> {
         // Get Data
