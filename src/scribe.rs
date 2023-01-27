@@ -1,6 +1,7 @@
 use crate::note::Note;
 use crate::path::ScribePath;
 use crate::NOTES_DIR;
+use casual;
 use grep_matcher::Matcher;
 use grep_regex::RegexMatcher;
 use grep_searcher::sinks::UTF8;
@@ -10,7 +11,7 @@ use std::error::Error;
 use std::fs::{self, rename};
 use std::io::Cursor;
 use std::io::Write;
-use std::process::exit;
+use std::process::{exit, Command, Stdio};
 use walkdir::WalkDir;
 
 pub struct Scribe {}
@@ -187,15 +188,59 @@ impl Scribe {
     }
 
     pub fn pull() -> bool {
-        unimplemented!("Git Pull not yet implemented!");
+        let pull_cmd = Command::new("git")
+            .arg("pull")
+            .stdout(Stdio::null())
+            .status()
+            .unwrap();
+
+        return pull_cmd.success();
     }
 
     pub fn save(commit_message: &str) -> bool {
-        unimplemented!("Git Push not yet implemented!");
+        let add_cmd = Command::new("git")
+            .args(vec!["add", "."])
+            .stdout(Stdio::null())
+            .status()
+            .unwrap();
+
+        if add_cmd.success() {
+            let command_cmd = Command::new("git")
+                .args(vec!["commit", "-m", commit_message])
+                .stdout(Stdio::null())
+                .status()
+                .unwrap();
+
+            if command_cmd.success() {
+                let push_cmd = Command::new("git")
+                    .arg("push")
+                    .stdout(Stdio::null())
+                    .status()
+                    .unwrap();
+
+                return push_cmd.success();
+            } else {
+                return false;
+            }
+        }
+        return false;
     }
 
     pub fn sync(commit_message: Option<String>) -> bool {
-        unimplemented!("Git Sync not yet implemented!");
+        let git_pull = Self::pull();
+        if git_pull {
+            let git_save: bool;
+            if commit_message.is_some() {
+                git_save = Self::save(&commit_message.unwrap());
+            } else {
+                let msg: String = casual::prompt("Please enter a commit message: ").get();
+                git_save = Self::save(&msg);
+            }
+
+            return git_save;
+        }
+
+        return false;
     }
 
     fn get_paths() -> Vec<ScribePath> {
