@@ -7,6 +7,7 @@ use grep_regex::RegexMatcher;
 use grep_searcher::sinks::UTF8;
 use grep_searcher::Searcher;
 use skim::prelude::*;
+use std::env;
 use std::error::Error;
 use std::fs::{self, rename};
 use std::io::Cursor;
@@ -17,6 +18,20 @@ use walkdir::WalkDir;
 pub struct Scribe {}
 
 impl Scribe {
+    // Private Functions
+    fn get_paths() -> Vec<ScribePath> {
+        let mut paths: Vec<ScribePath> = vec![];
+        for entry in WalkDir::new(&*NOTES_DIR).into_iter().filter_map(|e| e.ok()) {
+            if !entry.path().display().to_string().contains(".git") {
+                let path = ScribePath::from(&entry.path().display().to_string());
+                if path.is_valid() {
+                    paths.push(path);
+                }
+            }
+        }
+        return paths;
+    }
+
     // Public Functions
     pub fn create(title: String, category: Option<String>, tags: Option<Vec<String>>) -> Note {
         let note = Note::new(title, category, tags);
@@ -247,16 +262,27 @@ impl Scribe {
         return false;
     }
 
-    fn get_paths() -> Vec<ScribePath> {
-        let mut paths: Vec<ScribePath> = vec![];
-        for entry in WalkDir::new(&*NOTES_DIR).into_iter().filter_map(|e| e.ok()) {
-            if !entry.path().display().to_string().contains(".git") {
-                let path = ScribePath::from(&entry.path().display().to_string());
-                if path.is_valid() {
-                    paths.push(path);
-                }
-            }
+    pub fn launch_editor() {
+        let editor: String;
+        if env::var("EDITOR").is_ok() {
+            editor = env::var("EDITOR").unwrap();
+        } else {
+            println!("Please set $EDITOR before continuing.");
+            exit(0);
         }
-        return paths;
+
+        // Make Sure you pull git before launching the editor
+        Self::pull();
+
+        // Launch Editor
+        let mut editor_cmd = Command::new(editor)
+            .current_dir(&*NOTES_DIR)
+            .spawn()
+            .unwrap();
+
+        let _res = editor_cmd.wait().unwrap();
+
+        // Sync After Editor Closes
+        Self::sync(None);
     }
 }

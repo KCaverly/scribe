@@ -70,6 +70,9 @@ enum Commands {
         #[clap(short, long)]
         commit_message: Option<String>,
     },
+
+    /// Launch Editor
+    Editor {},
 }
 
 pub fn run_cli() {
@@ -137,6 +140,10 @@ pub fn run_cli() {
 
         Commands::Sync { commit_message } => {
             Scribe::sync(commit_message);
+        }
+
+        Commands::Editor {} => {
+            Scribe::launch_editor();
         }
     }
 }
