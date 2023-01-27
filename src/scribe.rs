@@ -190,6 +190,7 @@ impl Scribe {
     pub fn pull() -> bool {
         let pull_cmd = Command::new("git")
             .arg("pull")
+            .current_dir(&*NOTES_DIR)
             .stdout(Stdio::null())
             .status()
             .unwrap();
@@ -200,6 +201,7 @@ impl Scribe {
     pub fn save(commit_message: &str) -> bool {
         let add_cmd = Command::new("git")
             .args(vec!["add", "."])
+            .current_dir(&*NOTES_DIR)
             .stdout(Stdio::null())
             .status()
             .unwrap();
@@ -207,6 +209,7 @@ impl Scribe {
         if add_cmd.success() {
             let command_cmd = Command::new("git")
                 .args(vec!["commit", "-m", commit_message])
+                .current_dir(&*NOTES_DIR)
                 .stdout(Stdio::null())
                 .status()
                 .unwrap();
@@ -214,6 +217,7 @@ impl Scribe {
             if command_cmd.success() {
                 let push_cmd = Command::new("git")
                     .arg("push")
+                    .current_dir(&*NOTES_DIR)
                     .stdout(Stdio::null())
                     .status()
                     .unwrap();
