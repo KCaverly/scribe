@@ -233,7 +233,7 @@ impl Scribe {
             if commit_message.is_some() {
                 git_save = Self::save(&commit_message.unwrap());
             } else {
-                let msg: String = casual::prompt("Please enter a commit message: ").get();
+                let msg = "(scribe) - updated notes";
                 git_save = Self::save(&msg);
             }
 
