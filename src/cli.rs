@@ -73,6 +73,17 @@ enum Commands {
 
     /// Launch Editor
     Editor {},
+
+    /// Link
+    Link {
+        /// The link to download
+        #[clap(short, long)]
+        link: String,
+
+        /// The title to save to
+        #[clap(short, long)]
+        title: String
+    },
 }
 
 pub fn run_cli() {
@@ -144,6 +155,10 @@ pub fn run_cli() {
 
         Commands::Editor {} => {
             Scribe::launch_editor();
+        }
+
+        Commands::Link { link, title } => {
+            Scribe::link(link, title);
         }
     }
 }

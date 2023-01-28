@@ -1,3 +1,4 @@
+use crate::link::Link;
 use crate::note::Note;
 use crate::path::ScribePath;
 use crate::NOTES_DIR;
@@ -284,5 +285,10 @@ impl Scribe {
 
         // Sync After Editor Closes
         Self::sync(None);
+    }
+
+    pub fn link(url: String, title: String) {
+        let link = Link::new(url, title);
+        link.get_from_web();
     }
 }

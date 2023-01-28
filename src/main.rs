@@ -2,6 +2,7 @@ mod note;
 mod path;
 mod cli;
 mod scribe;
+mod link;
 
 use std::env;
 use std::process::exit;
