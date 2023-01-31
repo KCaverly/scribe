@@ -3,6 +3,7 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::error::Error;
+use std::process::exit;
 use std::{fs, str};
 
 pub struct ScribeTemplate {
@@ -36,14 +37,28 @@ impl ScribeTemplate {
 
         let mut clean_matches: Vec<String> = Vec::new();
         for key in &matches {
-            let clean_match = key.replace("{{ ", "").replace("}}", "");
+            let clean_match = key.replace("{{ ", "").replace(" }}", "");
             clean_matches.push(clean_match)
         }
 
         return clean_matches;
     }
 
-    pub fn fill(values: HashMap<String, String>) -> String {
-        return "".to_string();
+    pub fn fill(&self, values: &HashMap<String, String>) -> String {
+        let keys = self.get_keys();
+        let mut data = self.data.clone();
+
+        for key in keys {
+            if !values.contains_key(&key) {
+                // TODO: Properly handle this error
+                println!("Template Key {} Not included in Values", key);
+                exit(0);
+            } else {
+                println!(r"{{{{ {} }}}}", key);
+                data = data.replace(&format!(r"{{{{ {} }}}}", key), &values[&key]);
+            }
+        }
+
+        return data;
     }
 }
