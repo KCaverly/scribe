@@ -7,6 +7,7 @@ use grep_matcher::Matcher;
 use grep_regex::RegexMatcher;
 use grep_searcher::sinks::UTF8;
 use grep_searcher::Searcher;
+use inquire::{self, CustomUserError, InquireError};
 use skim::prelude::*;
 use std::env;
 use std::error::Error;
@@ -33,7 +34,34 @@ impl Scribe {
         return paths;
     }
 
+    fn category_suggestor(input: &str) -> Result<Vec<String>, CustomUserError> {
+        let input = input.to_lowercase();
+
+        Ok(Self::list_categories()
+            .iter()
+            .filter(|p| p.to_lowercase().contains(&input))
+            .take(5)
+            .map(|p| String::from(p))
+            .collect())
+    }
+
     // Public Functions
+    pub fn list_categories() -> Vec<String> {
+        // TODO: Implement this for real
+        return vec![
+            "input".to_string(),
+            "areas".to_string(),
+            "projects".to_string(),
+            "archive".to_string(),
+            "resources".to_string(),
+        ];
+    }
+
+    pub fn list_tags() -> Vec<String> {
+        // TODO: Implement this for real
+        return vec!["todo".to_string(), "test".to_string(), "scribe".to_string()];
+    }
+
     pub fn create(title: String, category: Option<String>, tags: Option<Vec<String>>) -> Note {
         let note = Note::new(title, category, tags);
         note.init();
@@ -77,22 +105,26 @@ impl Scribe {
         println!("Creating new note...\n");
 
         // Get Name of Note
-        let name: String = casual::prompt("Name of the Note:    ").get();
+        let name_result = inquire::Text::new("Name of the Note:").prompt();
+        let name = name_result.unwrap();
 
         // Get Category of Note
-        let category: String = casual::prompt("Category of Note:    ").get();
+        let category_result: Result<String, InquireError> = inquire::Text::new("Category of Note:")
+            .with_autocomplete(&Self::category_suggestor)
+            .prompt();
+        let category = category_result.unwrap();
 
         // Get Tags Associated With Note
-        let tags: String = casual::prompt("Tags for Note:       ")
-            .default("".to_string())
-            .get();
+        let existing_tags_result: Result<Option<Vec<String>>, InquireError> =
+            inquire::MultiSelect::new("Select Existing Tags:", Self::list_tags())
+                .with_vim_mode(true)
+                .prompt_skippable();
 
-        let tags_vec = Self::parse_tags_string(Some(tags));
+        let new_tag: Result<Option<String>, InquireError> =
+            inquire::Text::new("New Tags:").prompt_skippable();
 
-        println!("{}", name);
-
-        let note = Note::new(name, Some(category), tags_vec);
-        note.init();
+        let note = Note::new(name, Some(category), Some(vec!["".to_string()]));
+        // note.init();
 
         return note;
     }
