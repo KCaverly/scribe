@@ -1,19 +1,19 @@
 use crate::path::ScribePath;
+use crate::scribe::Scribe;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
+use regex::Regex;
 
-use std::error::Error;
+use std::collections::HashSet;
 use std::fs::{self, File};
 use std::io::Write;
-// For Searching
-use grep_matcher::Matcher;
-use grep_regex::RegexMatcher;
-use grep_searcher::sinks::UTF8;
-use grep_searcher::Searcher;
+use std::str;
 
 pub struct Note {
     title: String,
     category: String,
-    tags: Vec<String>,
+    // TODO: Convert this to HashSet<String>
+    // We shouldnt have duplicates in this list
+    pub tags: Vec<String>,
     date: DateTime<Local>,
     path: ScribePath,
 }
@@ -73,20 +73,19 @@ impl Note {
     }
 
     // Private Methods
-    fn search_data(data: &[u8], search_string: String) -> Result<Vec<String>, Box<dyn Error>> {
-        // Search
-        let mut matches: Vec<String> = vec![];
-        let matcher = RegexMatcher::new(&search_string)?;
-        Searcher::new().search_slice(
-            &matcher,
-            &data,
-            UTF8(|lnum, line| {
-                let mymatch = matcher.find(line.as_bytes())?.unwrap();
-                matches.push(line[mymatch].to_string());
-                Ok(true)
-            }),
-        )?;
-        return Ok(matches);
+    fn get_matches<'a>(data: &'a [u8], capture_string: &'a str) -> Option<HashSet<&'a str>> {
+        let re: Regex = Regex::new(capture_string).unwrap();
+
+        let data_ = str::from_utf8(data);
+        if data_.is_err() {
+            return None;
+        }
+        let caps = re.captures_iter(str::from_utf8(data).unwrap());
+        let res: HashSet<&str> = caps
+            .map(|m| m.get(1))
+            .map(|x| x.expect("Failed").as_str())
+            .collect();
+        return Some(res);
     }
 
     fn get_file_name(&self) -> String {
@@ -97,27 +96,31 @@ impl Note {
         }
     }
 
-    fn parse_tags(data: &[u8]) -> Vec<String> {
-        let tag_line = Self::search_data(data, "Tags:.+".to_string()).unwrap();
-        let tags = tag_line.last().unwrap().replace("Tags:**", "");
-        let tag_vec = tags
-            .trim()
-            .split(" #")
-            .map(|s| s.trim_start_matches("#").to_string())
+    pub fn parse_tags(data: &[u8]) -> Vec<String> {
+        // TODO: Add Frontmatter matches
+        let hashtag_matches = Self::get_matches(data, "\\#([A-Za-z0-9-]+)");
+
+        if hashtag_matches.is_none() {
+            return vec![];
+        }
+
+        let tags: Vec<String> = Vec::from_iter(hashtag_matches.unwrap())
+            .into_iter()
+            .map(|x| x.to_string())
             .collect();
-        return tag_vec;
+
+        return tags;
     }
 
-    fn parse_date(data: &[u8]) -> DateTime<Local> {
-        let date_line = Self::search_data(data, "Date:.+".to_string()).unwrap();
-        let date_str = date_line.last().unwrap().replace("Date:** ", "");
+    pub fn parse_title(data: &[u8]) -> String {
+        return "".to_string();
+    }
+
+    pub fn parse_date(data: &[u8]) -> DateTime<Local> {
+        let date_line = Some("2020-01-01 10:02 PM");
+        let date_str = date_line.unwrap().replace("Date:** ", "");
         let naive = NaiveDateTime::parse_from_str(&date_str.trim(), "%Y-%m-%d %I:%M %p").unwrap();
         return Local.from_local_datetime(&naive).unwrap();
-    }
-
-    fn parse_title(data: &[u8]) -> String {
-        let title_line = Self::search_data(data, "^# .+".to_string()).unwrap();
-        return title_line.last().unwrap().replace("# ", "");
     }
 
     // Public Methods
@@ -149,17 +152,5 @@ impl Note {
             let init_data = init_str.join("");
             _ = file.write_all(init_data.trim().as_bytes());
         }
-    }
-
-    pub fn search_match(&self, match_string: String) -> Result<Vec<String>, Box<dyn Error>> {
-        unimplemented!("Regex Matching not yet implemented!");
-    }
-
-    pub fn search(&self, search_string: String) -> Result<Vec<String>, Box<dyn Error>> {
-        // Get Data
-        let path = self.path.as_string(true);
-        let data = fs::read(path).expect("Cannot open file!");
-
-        return Self::search_data(&data, search_string);
     }
 }

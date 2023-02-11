@@ -9,6 +9,7 @@ use grep_searcher::sinks::UTF8;
 use grep_searcher::Searcher;
 use inquire::{self, CustomUserError, InquireError};
 use skim::prelude::*;
+use std::collections::HashSet;
 use std::env;
 use std::error::Error;
 use std::fs::{self, rename};
@@ -58,8 +59,22 @@ impl Scribe {
     }
 
     pub fn list_tags() -> Vec<String> {
-        // TODO: Implement this for real
-        return vec!["todo".to_string(), "test".to_string(), "scribe".to_string()];
+        let mut tags: Vec<String> = Vec::new();
+        for path in Self::get_paths() {
+            if !path.is_dir() & path.is_markdown() {
+                let path_str = path.as_string(true);
+                println!("PATH: {}", path_str);
+
+                let note = Note::from_path(&path_str);
+                let t = note.tags;
+                for tag in &t {
+                    println!("TAG: {}", tag);
+                }
+                tags.extend(t);
+            }
+        }
+
+        return tags;
     }
 
     pub fn create(title: String, category: Option<String>, tags: Option<Vec<String>>) -> Note {

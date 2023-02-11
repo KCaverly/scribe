@@ -117,4 +117,12 @@ impl ScribePath {
     pub fn replace_category(&mut self, category: &str) {
         self.category = category.to_string();
     }
+
+    pub fn is_markdown(&self) -> bool {
+        if self.base.is_none() {
+            return false;
+        } else {
+            return self.base.as_ref().unwrap().contains(".md");
+        }
+    }
 }
