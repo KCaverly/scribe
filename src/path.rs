@@ -61,7 +61,7 @@ impl ScribePath {
     }
 
     pub fn exists(&self) -> bool {
-        todo!();
+        return self.as_pathbuf().exists();
     }
 
     pub fn is_dir(&self) -> bool {
@@ -81,7 +81,7 @@ impl ScribePath {
     }
 
     pub fn as_pathbuf(&self) -> PathBuf {
-        todo!();
+        return PathBuf::from(&self.path);
     }
 
     pub fn replace_category(&self, category: &str) {
