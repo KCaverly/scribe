@@ -6,16 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.0.29", features = ["derive"] }
-chrono = "0.4.23"
-grep-searcher = "0.1.8"
-walkdir = "2.3.2"
-grep-matcher = "0.1.6"
-grep-regex = "0.1.11"
-casual = "0.2"
 lazy_static = "1.4.0"
-skim = "*"
-reqwest = { version = "0.11", features = ["blocking", "json"] }
 regex = "1"
-bytes = "*"
-inquire = "*"
