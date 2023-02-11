@@ -1,5 +1,5 @@
 use crate::NOTES_DIR;
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 pub struct ScribePath {
     // Always store the path as the absolute path
@@ -124,5 +124,20 @@ impl ScribePath {
         } else {
             return self.base.as_ref().unwrap().contains(".md");
         }
+    }
+
+    pub fn create_directory(&self) {
+        todo!();
+    }
+
+    pub fn create_file(&self, data: String) {
+        todo!();
+    }
+
+    pub fn get_data(&self) -> Option<&[u8]> {
+        if self.exists() & !self.is_dir() {
+            return Some(fs::read(self.as_string(true)).expect("Cannot Open File!"));
+        }
+        return None;
     }
 }
