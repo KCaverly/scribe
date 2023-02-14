@@ -155,7 +155,12 @@ impl ScribePath {
         }
     }
 
-    pub fn get_data(&self) -> Option<&[u8]> {
-        todo!();
+    pub fn get_data(&self) -> Option<Vec<u8>> {
+        let data = fs::read(self.as_string(true));
+        if data.is_ok() {
+            return Some(data.unwrap());
+        } else {
+            return None;
+        }
     }
 }

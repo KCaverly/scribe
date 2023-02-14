@@ -1,7 +1,8 @@
 use scribe::path::ScribePath;
+use std::str;
 
 pub mod common;
-use common::{DIR_PATH, HIDDEN_PATH, MD_PATH, NESTED_DIR_PATH, NESTED_PATH, NOTES_DIR};
+use common::{DIR_PATH, HIDDEN_PATH, MD_PATH, NESTED_DIR_PATH, NESTED_PATH, NOTES_DIR, TXT_PATH};
 
 pub fn take_down_test_directory() {
     let path = ScribePath::from(&format!("{}/tmp", &*NOTES_DIR));
@@ -79,24 +80,36 @@ fn test_path_is_hidden() {
     let path = ScribePath::from(known_path);
     assert!(!path.is_hidden());
 }
-//
-// #[test]
-// fn test_path_replace_category() {
-//     let known_path = "/home/kcaverly/kb/projects/scribe/test.txt";
-//     let mut path = ScribePath::from(known_path);
-//     assert_eq!(path.get_category(), "projects/scribe");
-//
-//     path.replace_category("inbox/scribe");
-//     assert_eq!(path.get_category(), "inbox/scribe");
-// }
-//
-// #[test]
-// fn test_path_is_markdown() {
-//     let known_path = "/home/kcaverly/kb/projects/scribe/functionality.md";
-//     let path = ScribePath::from(known_path);
-//     assert!(path.is_markdown());
-//
-//     let path = "/home/kcaverly/kb/projects/scribe/test.txt";
-//     let path = ScribePath::from(path);
-//     assert!(!path.is_markdown());
-// }
+
+#[test]
+fn test_path_replace_category() {
+    let mut path = ScribePath::from(&*MD_PATH);
+    assert_eq!(path.get_category(), "tmp");
+
+    path.replace_category("inbox/scribe");
+    assert_eq!(path.get_category(), "inbox/scribe");
+}
+
+#[test]
+fn test_path_is_markdown() {
+    let path = ScribePath::from(&*MD_PATH);
+    assert!(path.is_markdown());
+
+    let path = ScribePath::from(&*TXT_PATH);
+    assert!(!path.is_markdown());
+}
+
+#[test]
+fn test_path_get_data() {
+    take_down_test_directory();
+
+    let path = ScribePath::from(&*MD_PATH);
+    let test_data = "This is a test file.";
+    path.create_file(test_data.to_string());
+
+    let data = path.get_data();
+    assert!(data.is_some());
+    assert_eq!(test_data, std::str::from_utf8(&data.unwrap()).unwrap());
+
+    take_down_test_directory();
+}
