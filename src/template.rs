@@ -44,7 +44,7 @@ impl ScribeTemplate {
         return clean_matches;
     }
 
-    pub fn fill(&self, values: &HashMap<String, String>) -> Option<String> {
+    pub fn fill(&self, values: &HashMap<String, String>) -> String {
         let keys = self.get_keys();
         let mut data = self.data.clone();
 
@@ -52,13 +52,13 @@ impl ScribeTemplate {
             if !values.contains_key(&key) {
                 // TODO: Properly handle this error
                 println!("Template Key {} Not included in Values", key);
-                return None;
+                panic!("Please Enter All Params");
             } else {
                 println!(r"{{{{ {} }}}}", key);
                 data = data.replace(&format!(r"{{{{ {} }}}}", key), &values[&key]);
             }
         }
 
-        return Some(data);
+        return data;
     }
 }

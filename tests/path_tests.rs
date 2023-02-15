@@ -30,7 +30,6 @@ fn test_path_create_and_delete_directory() {
 
     let path2 = ScribePath::from(&NESTED_PATH);
     path2.create_directory();
-
     assert!(dir_path2.exists());
 
     dir_path2.delete();
@@ -46,7 +45,7 @@ fn test_path_create_and_delete_file() {
     // Test Create File
     let path = ScribePath::from(&MD_PATH);
     assert!(!path.exists());
-    path.create_file("This is a test file!".to_string());
+    path.create_file("This is a test file!");
     assert!(path.exists());
 
     // Test Delete File
@@ -105,11 +104,11 @@ fn test_path_get_data() {
 
     let path = ScribePath::from(&*MD_PATH);
     let test_data = "This is a test file.";
-    path.create_file(test_data.to_string());
+    path.create_file(test_data);
 
     let data = path.get_data();
     assert!(data.is_some());
-    assert_eq!(test_data, std::str::from_utf8(&data.unwrap()).unwrap());
+    assert_eq!(test_data, data.unwrap());
 
     take_down_test_directory();
 }

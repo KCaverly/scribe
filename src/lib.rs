@@ -1,5 +1,6 @@
-pub mod template;
+pub mod note;
 pub mod path;
+pub mod template;
 
 use lazy_static::lazy_static;
 use std::env;

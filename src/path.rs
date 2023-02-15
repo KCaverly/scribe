@@ -135,7 +135,7 @@ impl ScribePath {
         }
     }
 
-    pub fn create_file(&self, data: String) {
+    pub fn create_file(&self, data: &str) {
         let parent = self.get_parent();
         println!("{}", parent.as_string(true));
         if !parent.exists() {
@@ -147,20 +147,26 @@ impl ScribePath {
     }
 
     pub fn delete(&self) {
-        if !self.is_dir() {
-            fs::remove_file(self.as_string(true));
-        } else {
-            // Will recursively delete all data in directory.
-            fs::remove_dir_all(self.as_string(true));
+        if self.exists() {
+            if !self.is_dir() {
+                fs::remove_file(self.as_string(true));
+            } else {
+                // Will recursively delete all data in directory.
+                fs::remove_dir_all(self.as_string(true));
+            }
         }
     }
 
-    pub fn get_data(&self) -> Option<Vec<u8>> {
+    pub fn get_data(&self) -> Option<String> {
         let data = fs::read(self.as_string(true));
         if data.is_ok() {
-            return Some(data.unwrap());
-        } else {
-            return None;
+            return Some(
+                std::str::from_utf8(&data.unwrap())
+                    .ok()
+                    .unwrap()
+                    .to_string(),
+            );
         }
+        return None;
     }
 }

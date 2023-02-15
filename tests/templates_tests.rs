@@ -25,12 +25,7 @@ fn test_template_fill() {
     let mut values = HashMap::new();
     values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
     values.insert("TAGS".to_string(), r#""tag1","tag2""#.to_string());
-
-    let filled = template.fill(&values);
-    assert!(filled.is_none());
-
     values.insert("TITLE".to_string(), "This is a test title".to_string());
 
     let filled = template.fill(&values);
-    assert!(filled.is_some());
 }
