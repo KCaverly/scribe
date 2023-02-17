@@ -1,6 +1,7 @@
 use crate::NOTES_DIR;
 use std::io::Write;
 use std::{fs, path::PathBuf};
+use walkdir::WalkDir;
 
 pub struct ScribePath {
     pub path: String,
@@ -24,7 +25,10 @@ impl ScribePath {
 
     fn get_relative(path: &str) -> String {
         if path.contains(&*NOTES_DIR) {
-            return path.replace(&*NOTES_DIR, "");
+            return path
+                .replace(&*NOTES_DIR, "")
+                .trim_start_matches("/")
+                .to_string();
         }
         return path.to_string();
     }
@@ -34,6 +38,21 @@ impl ScribePath {
             return format!("{}/{}", &*NOTES_DIR, path.trim_start_matches("/"));
         }
         return path.to_string();
+    }
+
+    pub fn get_children(&self) -> Vec<ScribePath> {
+        let mut paths: Vec<ScribePath> = vec![];
+        for entry in WalkDir::new(self.as_string(true))
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
+            let path = ScribePath::from(&entry.path().display().to_string());
+            if path.is_valid() {
+                paths.push(path);
+            }
+        }
+
+        return paths;
     }
 
     pub fn get_base(&self) -> Option<String> {
@@ -65,6 +84,18 @@ impl ScribePath {
         return self.as_pathbuf().exists();
     }
 
+    pub fn is_valid(&self) -> bool {
+        if self.as_string(true).contains(".git") {
+            return false;
+        }
+
+        if self.get_category().len() == 0 {
+            return false;
+        }
+
+        return true;
+    }
+
     pub fn is_dir(&self) -> bool {
         return self.as_pathbuf().is_dir();
     }
@@ -82,10 +113,6 @@ impl ScribePath {
         }
 
         return false;
-    }
-
-    pub fn is_valid(&self) -> bool {
-        todo!();
     }
 
     pub fn as_string(&self, absolute: bool) -> String {
