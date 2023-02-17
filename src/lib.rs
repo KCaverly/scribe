@@ -1,4 +1,5 @@
 pub mod note;
+pub mod parsers;
 pub mod path;
 pub mod template;
 

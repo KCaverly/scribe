@@ -54,7 +54,6 @@ impl ScribeTemplate {
                 println!("Template Key {} Not included in Values", key);
                 panic!("Please Enter All Params");
             } else {
-                println!(r"{{{{ {} }}}}", key);
                 data = data.replace(&format!(r"{{{{ {} }}}}", key), &values[&key]);
             }
         }
