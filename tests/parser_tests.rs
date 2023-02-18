@@ -1,6 +1,7 @@
 use chrono::{Local, NaiveDateTime, TimeZone};
 use scribe::note::Note;
 use scribe::parsers::date::Date;
+use scribe::parsers::embedded_links::EmbeddedLinks;
 use scribe::parsers::parser::Parser;
 use scribe::parsers::tags::Tags;
 use scribe::parsers::title::Title;
@@ -25,7 +26,7 @@ pub fn take_down_test_directory() {
 fn test_parser_get_matches() {
     take_down_test_directory();
 
-    let test_name = "tmp_create_and_delete_directory";
+    let test_name = "tmp_parser_get_matches";
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
@@ -51,7 +52,7 @@ fn test_parser_get_matches() {
 fn test_parser_date() {
     take_down_test_directory();
 
-    let test_name = "tmp_create_and_delete_directory";
+    let test_name = "tmp_parser_date";
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
@@ -82,7 +83,7 @@ fn test_parser_date() {
 fn test_parser_title() {
     take_down_test_directory();
 
-    let test_name = "tmp_create_and_delete_directory";
+    let test_name = "tmp_parser_title";
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
@@ -111,7 +112,7 @@ fn test_parser_title() {
 fn test_parser_tags() {
     take_down_test_directory();
 
-    let test_name = "tmp_create_and_delete_directory";
+    let test_name = "tmp_parser_tags";
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
@@ -134,6 +135,39 @@ fn test_parser_tags() {
     test_tags.insert("tag2".to_string());
 
     assert_eq!(tags, Some(test_tags));
+
+    take_down_test_directory();
+}
+
+#[test]
+fn test_parser_embedded_links() {
+    take_down_test_directory();
+
+    let test_name = "tmp_parser_embedded_links";
+    let md_path_str = &*MD_PATH.replace("tmp", test_name);
+    let md_path = ScribePath::from(md_path_str);
+
+    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
+    let template = ScribeTemplate::load(path);
+
+    let mut values = HashMap::new();
+    values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
+    values.insert("TAGS".to_string(), r#""tag1","tag2""#.to_string());
+    values.insert(
+        "TITLE".to_string(),
+        "This [[test/link title | Title]]".to_string(),
+    );
+
+    let note = Note::from_template(md_path, template, values);
+
+    let md_path = ScribePath::from(md_path_str);
+    let data = md_path.get_data().unwrap();
+    let embedded_links = EmbeddedLinks::parse(&data);
+
+    let mut test_links = HashSet::<String>::new();
+    test_links.insert("test/link title".to_string());
+
+    assert_eq!(Some(test_links), embedded_links);
 
     take_down_test_directory();
 }
