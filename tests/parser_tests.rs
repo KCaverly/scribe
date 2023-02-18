@@ -2,9 +2,11 @@ use chrono::{Local, NaiveDateTime, TimeZone};
 use scribe::note::Note;
 use scribe::parsers::date::Date;
 use scribe::parsers::parser::Parser;
+use scribe::parsers::tags::Tags;
+use scribe::parsers::title::Title;
 use scribe::path::ScribePath;
 use scribe::template::ScribeTemplate;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub mod common;
 use common::{DIR_PATH, HIDDEN_PATH, MD_PATH, NESTED_DIR_PATH, NESTED_PATH, NOTES_DIR, TXT_PATH};
@@ -72,6 +74,66 @@ fn test_parser_date() {
     let date = Date::parse(&data);
 
     assert_eq!(date, Some(test_date));
+
+    take_down_test_directory();
+}
+
+#[test]
+fn test_parser_title() {
+    take_down_test_directory();
+
+    let test_name = "tmp_create_and_delete_directory";
+    let md_path_str = &*MD_PATH.replace("tmp", test_name);
+    let md_path = ScribePath::from(md_path_str);
+
+    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
+    let template = ScribeTemplate::load(path);
+
+    let mut values = HashMap::new();
+    values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
+    values.insert("TAGS".to_string(), r#""tag1","tag2""#.to_string());
+    values.insert("TITLE".to_string(), "This is a test title".to_string());
+
+    let note = Note::from_template(md_path, template, values);
+
+    let test_title = "This is a test title".to_string();
+
+    let md_path = ScribePath::from(md_path_str);
+    let data = md_path.get_data().unwrap();
+    let title = Title::parse(&data);
+
+    assert_eq!(title, Some(test_title));
+
+    take_down_test_directory();
+}
+
+#[test]
+fn test_parser_tags() {
+    take_down_test_directory();
+
+    let test_name = "tmp_create_and_delete_directory";
+    let md_path_str = &*MD_PATH.replace("tmp", test_name);
+    let md_path = ScribePath::from(md_path_str);
+
+    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
+    let template = ScribeTemplate::load(path);
+
+    let mut values = HashMap::new();
+    values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
+    values.insert("TAGS".to_string(), r#""tag1","tag2""#.to_string());
+    values.insert("TITLE".to_string(), "This is a test title".to_string());
+
+    let note = Note::from_template(md_path, template, values);
+
+    let md_path = ScribePath::from(md_path_str);
+    let data = md_path.get_data().unwrap();
+    let tags = Tags::parse(&data);
+
+    let mut test_tags = HashSet::<String>::new();
+    test_tags.insert("tag1".to_string());
+    test_tags.insert("tag2".to_string());
+
+    assert_eq!(tags, Some(test_tags));
 
     take_down_test_directory();
 }
