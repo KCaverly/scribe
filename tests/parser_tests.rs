@@ -2,6 +2,7 @@ use chrono::{Local, NaiveDateTime, TimeZone};
 use scribe::note::Note;
 use scribe::parsers::date::Date;
 use scribe::parsers::embedded_links::EmbeddedLinks;
+use scribe::parsers::internal_links::InternalLinks;
 use scribe::parsers::parser::Parser;
 use scribe::parsers::tags::Tags;
 use scribe::parsers::title::Title;
@@ -202,6 +203,39 @@ fn test_parser_web_links() {
     test_links.insert("https://www.google.com".to_string());
 
     assert_eq!(Some(test_links), web_links);
+
+    take_down_test_directory();
+}
+
+#[test]
+fn test_parser_internal_links() {
+    take_down_test_directory();
+
+    let test_name = "tmp_parser_internal_links";
+    let md_path_str = &*MD_PATH.replace("tmp", test_name);
+    let md_path = ScribePath::from(md_path_str);
+
+    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
+    let template = ScribeTemplate::load(path);
+
+    let mut values = HashMap::new();
+    values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
+    values.insert("TAGS".to_string(), r#""tag1","tag2""#.to_string());
+    values.insert(
+        "TITLE".to_string(),
+        "This [internal_data](/home/kcaverly/test/)".to_string(),
+    );
+
+    let note = Note::from_template(md_path, template, values);
+
+    let md_path = ScribePath::from(md_path_str);
+    let data = md_path.get_data().unwrap();
+    let links = InternalLinks::parse(&data);
+
+    let mut test_links = HashSet::<String>::new();
+    test_links.insert("/home/kcaverly/test/".to_string());
+
+    assert_eq!(Some(test_links), links);
 
     take_down_test_directory();
 }
