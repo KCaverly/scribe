@@ -2,6 +2,7 @@ pub mod note;
 pub mod parsers;
 pub mod path;
 pub mod template;
+pub mod index;
 
 use lazy_static::lazy_static;
 use std::env;
