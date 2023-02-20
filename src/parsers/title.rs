@@ -10,16 +10,22 @@ impl Title {
 
         let title: String;
         if matches.is_some() {
-            title = matches.unwrap().into_iter().next().unwrap().to_string();
-            return Some(title);
+            let found_matches = matches.unwrap();
+            if found_matches.len() > 0 {
+                title = found_matches.into_iter().next().unwrap().to_string();
+                return Some(title);
+            }
         }
 
         // Get Title from # header
-        let parser = Parser::new("# (.+)".to_string());
+        let parser = Parser::new("\\#{1} (.+)".to_string());
         let matches = parser.get_matches(data);
         if matches.is_some() {
-            title = matches.unwrap().into_iter().next().unwrap().to_string();
-            return Some(title);
+            let found_matches = matches.unwrap();
+            if found_matches.len() > 0 {
+                title = found_matches.into_iter().next().unwrap().to_string();
+                return Some(title);
+            }
         }
         return None;
     }
