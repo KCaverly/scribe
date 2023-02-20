@@ -1,5 +1,4 @@
 use chrono::{Local, NaiveDateTime, TimeZone};
-use scribe::note::Note;
 use scribe::parsers::date::Date;
 use scribe::parsers::embedded_links::EmbeddedLinks;
 use scribe::parsers::internal_links::InternalLinks;
@@ -9,6 +8,7 @@ use scribe::parsers::title::Title;
 use scribe::parsers::web_links::WebLinks;
 use scribe::path::ScribePath;
 use scribe::template::ScribeTemplate;
+use scribe::{note::Note, template::ScribeTemplateLibrary};
 use std::collections::{HashMap, HashSet};
 
 pub mod common;
@@ -32,8 +32,8 @@ fn test_parser_get_matches() {
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
-    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
-    let template = ScribeTemplate::load(path);
+    let library = ScribeTemplateLibrary::new();
+    let template = library.get_template("basic").unwrap();
 
     let mut values = HashMap::new();
     values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
@@ -58,8 +58,8 @@ fn test_parser_date() {
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
-    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
-    let template = ScribeTemplate::load(path);
+    let library = ScribeTemplateLibrary::new();
+    let template = library.get_template("basic").unwrap();
 
     let mut values = HashMap::new();
     values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
@@ -89,8 +89,8 @@ fn test_parser_title() {
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
-    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
-    let template = ScribeTemplate::load(path);
+    let library = ScribeTemplateLibrary::new();
+    let template = library.get_template("basic").unwrap();
 
     let mut values = HashMap::new();
     values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
@@ -118,8 +118,8 @@ fn test_parser_tags() {
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
-    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
-    let template = ScribeTemplate::load(path);
+    let library = ScribeTemplateLibrary::new();
+    let template = library.get_template("basic").unwrap();
 
     let mut values = HashMap::new();
     values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
@@ -149,8 +149,8 @@ fn test_parser_embedded_links() {
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
-    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
-    let template = ScribeTemplate::load(path);
+    let library = ScribeTemplateLibrary::new();
+    let template = library.get_template("basic").unwrap();
 
     let mut values = HashMap::new();
     values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
@@ -182,8 +182,8 @@ fn test_parser_web_links() {
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
-    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
-    let template = ScribeTemplate::load(path);
+    let library = ScribeTemplateLibrary::new();
+    let template = library.get_template("basic").unwrap();
 
     let mut values = HashMap::new();
     values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());
@@ -215,8 +215,8 @@ fn test_parser_internal_links() {
     let md_path_str = &*MD_PATH.replace("tmp", test_name);
     let md_path = ScribePath::from(md_path_str);
 
-    let path = "/home/kcaverly/personal/scribe/src/templates/basic.md";
-    let template = ScribeTemplate::load(path);
+    let library = ScribeTemplateLibrary::new();
+    let template = library.get_template("basic").unwrap();
 
     let mut values = HashMap::new();
     values.insert("DATE".to_string(), "2023-01-30 09:56 PM".to_string());

@@ -10,7 +10,7 @@ pub struct Note {
 impl Note {
     pub fn from_template(
         path: ScribePath,
-        template: ScribeTemplate,
+        template: &ScribeTemplate,
         params: HashMap<String, String>,
     ) -> Self {
         let init_data = template.fill(&params);

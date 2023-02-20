@@ -3,8 +3,12 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::error::Error;
+use std::path::PathBuf;
 use std::process::exit;
 use std::{fs, str};
+use walkdir::WalkDir;
+
+use crate::path::ScribePath;
 
 pub struct ScribeTemplate {
     path: String,
@@ -29,6 +33,13 @@ impl ScribeTemplate {
         return Self {
             path: template_path.to_string(),
             data: template_str.to_string(),
+        };
+    }
+
+    pub fn from_data(template_path: &str, data: &str) -> Self {
+        return Self {
+            path: template_path.to_string(),
+            data: data.to_string(),
         };
     }
 
@@ -59,5 +70,40 @@ impl ScribeTemplate {
         }
 
         return data;
+    }
+}
+
+pub struct ScribeTemplateLibrary {
+    templates: HashMap<String, ScribeTemplate>,
+}
+
+impl ScribeTemplateLibrary {
+    pub fn new() -> Self {
+        let mut templates: HashMap<String, ScribeTemplate> = HashMap::new();
+
+        // Basic.md
+        let data = include!("templates/basic.md");
+        let temp = ScribeTemplate::from_data("templates/basic.md", data);
+        templates.insert("basic".to_string(), temp);
+
+        return Self {
+            templates: templates,
+        };
+    }
+
+    pub fn list_templates(&self) -> HashSet<String> {
+        let keys: HashSet<String> = self.templates.keys().cloned().collect();
+        return keys;
+    }
+
+    pub fn get_template(&self, template_name: &str) -> Option<&ScribeTemplate> {
+        let template = self.templates.get(template_name);
+
+        if template.is_some() {
+            let owned_template = template.unwrap();
+            return Some(owned_template);
+        }
+
+        return None;
     }
 }

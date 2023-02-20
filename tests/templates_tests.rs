@@ -1,4 +1,4 @@
-use scribe::template::ScribeTemplate;
+use scribe::template::{ScribeTemplate, ScribeTemplateLibrary};
 use std::collections::HashMap;
 
 #[test]
@@ -28,4 +28,20 @@ fn test_template_fill() {
     values.insert("TITLE".to_string(), "This is a test title".to_string());
 
     let filled = template.fill(&values);
+}
+
+#[test]
+fn test_template_library() {
+    // Initialize Library
+    let library = ScribeTemplateLibrary::new();
+
+    // Get Template Keys
+    let keys = library.list_templates();
+    assert!(keys.contains("basic"));
+
+    assert!(!keys.contains("NOT_INCLUDED_TEAASDFASDF"));
+
+    // Get Template
+    let template = library.get_template("basic");
+    assert!(template.is_some());
 }
