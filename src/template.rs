@@ -9,6 +9,7 @@ use std::{fs, str};
 use walkdir::WalkDir;
 
 use crate::path::ScribePath;
+use crate::NOTES_DIR;
 
 pub struct ScribeTemplate {
     path: String,
@@ -85,6 +86,24 @@ impl ScribeTemplateLibrary {
         let data = include!("templates/basic.md");
         let temp = ScribeTemplate::from_data("templates/basic.md", data);
         templates.insert("basic".to_string(), temp);
+
+        // Find User Options
+        // TODO: Move this Append Path Functionality Up to ScribePath
+        let root = ScribePath::from(&*NOTES_DIR);
+        let mut template_dir = root.as_pathbuf();
+        template_dir.push("templates");
+
+        let template_dir_path = ScribePath::from(&template_dir.as_path().display().to_string());
+
+        if template_dir_path.exists() {
+            for file in template_dir_path.get_children() {
+                if file.is_markdown() {
+                    let data = file.get_data().unwrap();
+                    let template = ScribeTemplate::from_data(&file.as_string(true), &data);
+                    templates.insert(file.get_base().unwrap().replace(".md", ""), template);
+                }
+            }
+        }
 
         return Self {
             templates: templates,
