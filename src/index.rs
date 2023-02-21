@@ -56,6 +56,28 @@ impl NoteInfo {
 
         return note;
     }
+
+    pub fn has_backlink(&self, path: &ScribePath) -> bool {
+        if self.internal_links.is_some() {
+            let links = self.internal_links.as_ref().unwrap();
+            if links.contains(&path.as_string(false)) {
+                return true;
+            } else if links.contains(&path.as_string(true)) {
+                return false;
+            }
+        }
+
+        if self.embedded_links.is_some() {
+            let links = self.embedded_links.as_ref().unwrap();
+            if links.contains(&path.as_string(false).replace(".md", "")) {
+                return true;
+            } else if links.contains(&path.as_string(true).replace(".md", "")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -110,5 +132,15 @@ impl ScribeIndex {
                 note = &new_note;
             }
         }
+    }
+
+    pub fn get_backlinks(&self, path: &ScribePath) -> Vec<ScribePath> {
+        let mut links: Vec<ScribePath> = vec![];
+        for note in &self.notes {
+            if note.has_backlink(path) {
+                links.push(ScribePath::from(&note.path));
+            }
+        }
+        return links;
     }
 }

@@ -205,4 +205,16 @@ impl ScribePath {
         }
         return None;
     }
+
+    pub fn replace(&self, replace_str: String, new_str: String) -> std::io::Result<()> {
+        let og_data = self.get_data().unwrap();
+        let new_data = og_data.replace(&replace_str, &new_str);
+        let mut f = std::fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&self.as_string(true))?;
+        f.write_all(new_data.as_bytes())?;
+        f.flush()?;
+        return Ok(());
+    }
 }

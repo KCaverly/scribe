@@ -32,4 +32,13 @@ impl Note {
             data: data.unwrap(),
         };
     }
+
+    pub fn transfer(category: &str) -> Self {
+        // Move File Over
+
+        // Replace Links
+
+        // Update Index
+        todo!();
+    }
 }
