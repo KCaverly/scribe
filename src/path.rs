@@ -23,6 +23,12 @@ impl ScribePath {
         return Self { path: scribe_path };
     }
 
+    pub fn root() -> Self {
+        return Self {
+            path: NOTES_DIR.to_string(),
+        };
+    }
+
     fn get_relative(path: &str) -> String {
         if path.contains(&*NOTES_DIR) {
             return path
@@ -38,6 +44,10 @@ impl ScribePath {
             return format!("{}/{}", &*NOTES_DIR, path.trim_start_matches("/"));
         }
         return path.to_string();
+    }
+
+    pub fn extend(&mut self, path: &str) {
+        self.path = format!("{}/{}", self.path, path).to_string();
     }
 
     pub fn get_children(&self) -> Vec<ScribePath> {

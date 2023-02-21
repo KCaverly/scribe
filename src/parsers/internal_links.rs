@@ -5,7 +5,7 @@ pub struct InternalLinks {}
 
 impl InternalLinks {
     pub fn parse(data: &str) -> Option<HashSet<String>> {
-        let search = "\\[.+\\]\\((.+)\\)".to_string();
+        let search = "\\[.+\\]\\(([A-Za-z0-9\\-/]+)\\)".to_string();
         let parser = Parser::new(search);
         let matches = parser.get_matches(data);
 
