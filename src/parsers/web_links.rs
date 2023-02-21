@@ -6,12 +6,12 @@ pub struct WebLinks {}
 impl WebLinks {
     pub fn parse(data: &str) -> Option<HashSet<String>> {
         // Search for http... links
-        let search = "(http[s]?:[^\\s\\)]+)".to_string();
+        let search = "(http[s]?:[^\\s\\)\\]]+)".to_string();
         let parser = Parser::new(search);
         let matches = parser.get_matches(data);
 
         // Search for www.links
-        let search = "(www.[^\\s\\)]+)".to_string();
+        let search = "(www.[^\\s\\)\\]]+)".to_string();
         let parser = Parser::new(search);
         let matches_2 = parser.get_matches(data);
 
