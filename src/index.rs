@@ -1,7 +1,11 @@
-use crate::parsers::tags::Tags;
+use crate::parsers::embedded_links::EmbeddedLinks;
+use crate::parsers::internal_links::InternalLinks;
 use crate::parsers::title::Title;
+use crate::parsers::web_links::WebLinks;
+use crate::parsers::{date::Date, tags::Tags};
 use crate::path::ScribePath;
 use crate::NOTES_DIR;
+use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use serde::Serialize;
 use std::collections::HashSet;
 
@@ -10,6 +14,10 @@ pub struct NoteInfo {
     path: String,
     title: Option<String>,
     tags: Option<HashSet<String>>,
+    date: Option<DateTime<Local>>,
+    embedded_links: Option<HashSet<String>>,
+    internal_links: Option<HashSet<String>>,
+    web_links: Option<HashSet<String>>,
 }
 
 #[derive(Serialize)]
@@ -34,17 +42,29 @@ impl ScribeIndex {
                     let file_data = data.unwrap();
                     let title = Title::parse(&file_data);
                     let tags = Tags::parse(&file_data);
+                    let date = Date::parse(&file_data);
+                    let embedded_links = EmbeddedLinks::parse(&file_data);
+                    let internal_links = InternalLinks::parse(&file_data);
+                    let web_links = WebLinks::parse(&file_data);
 
                     note = NoteInfo {
                         path: file.as_string(true),
                         title: title,
                         tags: tags,
+                        date: date,
+                        embedded_links: embedded_links,
+                        internal_links: internal_links,
+                        web_links: web_links,
                     }
                 } else {
                     note = NoteInfo {
                         path: file.as_string(true),
                         title: None,
                         tags: None,
+                        date: None,
+                        embedded_links: None,
+                        internal_links: None,
+                        web_links: None,
                     }
                 }
 

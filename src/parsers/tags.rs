@@ -6,7 +6,7 @@ pub struct Tags {}
 impl Tags {
     pub fn parse(data: &str) -> Option<HashSet<String>> {
         // Get Front Matter Tags
-        let search = "tags:\\s\\[(.+)\\]".to_string();
+        let search = "\\btags:\\s\\[(.+)\\]".to_string();
         let parser = Parser::new(search);
         let matches = parser.get_matches(data);
 

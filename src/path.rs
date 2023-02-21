@@ -164,7 +164,6 @@ impl ScribePath {
 
     pub fn create_file(&self, data: &str) {
         let parent = self.get_parent();
-        println!("{}", parent.as_string(true));
         if !parent.exists() {
             self.create_directory();
         }
