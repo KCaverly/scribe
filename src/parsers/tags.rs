@@ -21,6 +21,13 @@ impl Tags {
                             .to_string(),
                     );
                 }
+            } else {
+                tags.insert(
+                    match_
+                        .trim_start_matches(r#"""#)
+                        .trim_end_matches(r#"""#)
+                        .to_string(),
+                );
             }
         }
 
