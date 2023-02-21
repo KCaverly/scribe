@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{path::ScribePath, template::ScribeTemplate};
+use crate::{index::ScribeIndex, path::ScribePath, template::ScribeTemplate};
 
 pub struct Note {
     path: ScribePath,
@@ -33,12 +33,32 @@ impl Note {
         };
     }
 
-    pub fn transfer(category: &str) -> Self {
+    pub fn transfer(&mut self, category: &str) {
         // Move File Over
+        let og_path = self.path.clone();
+        let mut new_path = self.path.clone();
+        new_path.replace_category(category);
+        self.path.rename(new_path);
 
         // Replace Links
+        let index = ScribeIndex::load();
+        if index.is_some() {
+            let unwrapped_index = index.unwrap();
+            let backlinks = unwrapped_index.get_backlinks(&og_path);
+            for backlink in backlinks {
+                // Update the Backlinked File With Correct Path
+                backlink.replace(og_path.as_string(true), self.path.as_string(false));
+                backlink.replace(og_path.as_string(false), self.path.as_string(false));
 
-        // Update Index
-        todo!();
+                // Update Index
+                unwrapped_index.update(&backlink);
+            }
+
+            // Delete Existing Note
+            unwrapped_index.delete(&og_path);
+
+            // Insert New Note
+            unwrapped_index.insert(&self.path);
+        }
     }
 }

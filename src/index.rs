@@ -125,6 +125,10 @@ impl ScribeIndex {
         std::fs::write(Self::get_location().as_string(true), json_str);
     }
 
+    pub fn delete(&self, path: &ScribePath) {
+        todo!();
+    }
+
     pub fn update(&self, path: &ScribePath) {
         for mut note in &self.notes {
             if note.path == path.as_string(true) {
@@ -142,5 +146,9 @@ impl ScribeIndex {
             }
         }
         return links;
+    }
+
+    pub fn insert(&self, path: &ScribePath) {
+        todo!();
     }
 }

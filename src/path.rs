@@ -1,8 +1,10 @@
 use crate::NOTES_DIR;
+use std::fs::rename;
 use std::io::Write;
 use std::{fs, path::PathBuf};
 use walkdir::WalkDir;
 
+#[derive(Clone)]
 pub struct ScribePath {
     pub path: String,
 }
@@ -191,6 +193,11 @@ impl ScribePath {
                 fs::remove_dir_all(self.as_string(true));
             }
         }
+    }
+
+    pub fn rename(&mut self, new_path: Self) {
+        rename(self.as_string(true), new_path.as_string(true));
+        self.path = new_path.as_string(true);
     }
 
     pub fn get_data(&self) -> Option<String> {
