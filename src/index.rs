@@ -5,19 +5,19 @@ use crate::parsers::web_links::WebLinks;
 use crate::parsers::{date::Date, tags::Tags};
 use crate::path::ScribePath;
 use crate::NOTES_DIR;
-use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 #[derive(Serialize, Deserialize)]
 pub struct NoteInfo {
-    path: String,
-    title: Option<String>,
-    tags: Option<HashSet<String>>,
-    date: Option<DateTime<Local>>,
-    embedded_links: Option<HashSet<String>>,
-    internal_links: Option<HashSet<String>>,
-    web_links: Option<HashSet<String>>,
+    pub path: String,
+    pub title: Option<String>,
+    pub tags: Option<HashSet<String>>,
+    pub date: Option<DateTime<Local>>,
+    pub embedded_links: Option<HashSet<String>>,
+    pub internal_links: Option<HashSet<String>>,
+    pub web_links: Option<HashSet<String>>,
 }
 
 impl NoteInfo {
@@ -82,7 +82,7 @@ impl NoteInfo {
 
 #[derive(Serialize, Deserialize)]
 pub struct ScribeIndex {
-    notes: Vec<NoteInfo>,
+    pub notes: Vec<NoteInfo>,
 }
 
 impl ScribeIndex {
@@ -90,12 +90,16 @@ impl ScribeIndex {
         let mut notes: Vec<NoteInfo> = vec![];
         return Self { notes: notes };
     }
-    pub fn load() -> Option<Self> {
-        let data = std::fs::read(Self::get_location().as_string(true));
-        if data.is_ok() {
-            let unwrapped = data.unwrap();
-            let str_data = std::str::from_utf8(&unwrapped);
-            let index = serde_json::from_str(str_data.unwrap());
+    pub fn load(index_path: Option<ScribePath>) -> Option<Self> {
+        let data: Option<String>;
+        if index_path.is_none() {
+            data = Self::get_location().get_data();
+        } else {
+            data = index_path.unwrap().get_data();
+        }
+
+        if data.is_some() {
+            let index = serde_json::from_str(&data.unwrap());
             if index.is_ok() {
                 return Some(index.unwrap());
             }
@@ -115,7 +119,7 @@ impl ScribeIndex {
     }
 
     fn get_location() -> ScribePath {
-        let mut root = ScribePath::root();
+        let mut root = ScribePath::root(None);
         root.extend(".scribe");
         return root;
     }

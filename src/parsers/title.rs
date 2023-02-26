@@ -12,7 +12,7 @@ impl Title {
         if matches.is_some() {
             let found_matches = matches.unwrap();
             if found_matches.len() > 0 {
-                title = found_matches.into_iter().next().unwrap().to_string();
+                title = found_matches.into_iter().next().unwrap().trim().to_string();
                 return Some(title);
             }
         }
@@ -23,7 +23,7 @@ impl Title {
         if matches.is_some() {
             let found_matches = matches.unwrap();
             if found_matches.len() > 0 {
-                title = found_matches.into_iter().next().unwrap().to_string();
+                title = found_matches.into_iter().next().unwrap().trim().to_string();
                 return Some(title);
             }
         }

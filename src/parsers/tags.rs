@@ -34,7 +34,7 @@ impl Tags {
         }
 
         // Get Hashtag Tags
-        let search = r"#([A-Z0-9a-z\\-]+)".to_string();
+        let search = r"\s\#([A-Z0-9a-z\\-\\_]+)".to_string();
         let parser = Parser::new(search);
         let matches = parser.get_matches(data);
 

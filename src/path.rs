@@ -25,7 +25,17 @@ impl ScribePath {
         return Self { path: scribe_path };
     }
 
-    pub fn root() -> Self {
+    pub fn root(directory_path: Option<String>) -> Self {
+        if directory_path.is_none() {
+            return Self {
+                path: NOTES_DIR.to_string(),
+            };
+        } else {
+            return Self {
+                path: directory_path.unwrap(),
+            };
+        }
+
         return Self {
             path: NOTES_DIR.to_string(),
         };

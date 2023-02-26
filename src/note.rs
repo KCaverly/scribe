@@ -41,7 +41,7 @@ impl Note {
         self.path.rename(new_path);
 
         // Replace Links
-        let index = ScribeIndex::load();
+        let index = ScribeIndex::load(None);
         if index.is_some() {
             let unwrapped_index = index.unwrap();
             let backlinks = unwrapped_index.get_backlinks(&og_path);
