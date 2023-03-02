@@ -30,3 +30,30 @@ impl Date {
         return None;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse() {
+        let naive_date =
+            NaiveDateTime::parse_from_str("2020-01-01 11:59 PM", "%Y-%m-%d %I:%M %p").unwrap();
+        let test_date = Local.from_local_datetime(&naive_date).unwrap();
+
+        // Test 1
+        let test_data = "date: 2020-01-01 11:59 PM";
+        let parsed_date = Date::parse(test_data);
+        assert_eq!(test_date, parsed_date.unwrap());
+
+        // Test 2
+        let test_data = "date: 2023-12-31 10:52 PM";
+        let parsed_date = Date::parse(test_data);
+        assert_ne!(test_date, parsed_date.unwrap());
+
+        // Test 3
+        let test_data = "Datesas: 2023-12-31 11:22 PM sdf";
+        let parsed_date = Date::parse(test_data);
+        assert!(parsed_date.is_none());
+    }
+}
