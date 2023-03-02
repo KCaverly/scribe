@@ -24,3 +24,18 @@ impl Parser {
         return Some(res);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_matches() {
+        let test_string = "Hi my name is Finn!";
+        let parser = Parser::new("Hi my name is (.+)".to_string());
+        let matches = parser.get_matches(test_string);
+
+        assert!(matches.is_some());
+        assert!(matches.unwrap().contains("Finn!"));
+    }
+}
