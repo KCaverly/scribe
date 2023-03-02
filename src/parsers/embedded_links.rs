@@ -19,3 +19,23 @@ impl EmbeddedLinks {
         return None;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse() {
+        let mut test_links: HashSet<String> = HashSet::new();
+        test_links.insert("projects/test/scribe".to_string());
+        test_links.insert("projects/test/scribe/sample".to_string());
+
+        // Test 1
+        let test_string = "This is a random note\n This is a [[projects/test/scribe]] \n This is another one [[projects/test/scribe/sample | title]] ";
+        let matches = EmbeddedLinks::parse(test_string);
+        assert!(matches.is_some());
+        let unwrapped = matches.unwrap();
+        assert!(unwrapped.len() == 2);
+        assert_eq!(unwrapped, test_links);
+    }
+}
