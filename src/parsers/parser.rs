@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use regex::Regex;
+use fancy_regex::Regex;
 
 pub struct Parser {
     search_string: String,
@@ -15,11 +15,13 @@ impl Parser {
 
     pub fn get_matches<'a>(&'a self, data: &'a str) -> Option<HashSet<String>> {
         let re: Regex = Regex::new(&self.search_string).unwrap();
-        let caps = re.captures_iter(data);
-        let res: HashSet<String> = caps
-            .map(|m| m.get(1))
-            .map(|x| x.expect("Failed").as_str().trim().to_string())
-            .collect();
+        let mut res: HashSet<String> = HashSet::new();
+
+        for cap in re.captures_iter(data) {
+            if cap.is_ok() {
+                res.insert(cap.unwrap().get(1).unwrap().as_str().trim().to_string());
+            }
+        }
 
         return Some(res);
     }

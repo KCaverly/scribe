@@ -18,7 +18,7 @@ impl Title {
         }
 
         // Get Title from # header
-        let parser = Parser::new("\\#{1} (.+)".to_string());
+        let parser = Parser::new("(?<!\\#)\\#{1} (.+)".to_string());
         let matches = parser.get_matches(data);
         if matches.is_some() {
             let found_matches = matches.unwrap();
@@ -28,5 +28,23 @@ impl Title {
             }
         }
         return None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Title;
+
+    #[test]
+    fn test_parse() {
+        let test_string = "---\ntitle: This is the title";
+        let parsed_title = Title::parse(test_string);
+        assert!(parsed_title.is_some());
+        assert_eq!(parsed_title.unwrap(), "This is the title".to_string());
+
+        let test_string2 = "# This is the title\n## This is the first header";
+        let parsed_title2 = Title::parse(test_string2);
+        assert!(parsed_title2.is_some());
+        assert_eq!(parsed_title2.unwrap(), "This is the title".to_string());
     }
 }
