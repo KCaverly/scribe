@@ -35,6 +35,7 @@ mod tests {
         let matches = EmbeddedLinks::parse(test_string);
         assert!(matches.is_some());
         let unwrapped = matches.unwrap();
+        println!("{:?}", unwrapped);
         assert!(unwrapped.len() == 2);
         assert_eq!(unwrapped, test_links);
     }
