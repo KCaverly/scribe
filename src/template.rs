@@ -5,9 +5,8 @@ use std::collections::HashSet;
 use std::{fs, str};
 
 use crate::parsers::parser::Parser;
+use crate::path::ScribePath;
 use crate::ScribeError;
-// use crate::path::ScribePath;
-// use crate::NOTES_DIR;
 
 lazy_static! {
     static ref TEMPLATE_KEYS: Regex = Regex::new(r"\{\{\s([a-zA-Z0-9\_]+)\s\}\}").unwrap();
@@ -59,58 +58,62 @@ impl ScribeTemplate {
     }
 }
 
-// pub struct ScribeTemplateLibrary {
-//     templates: HashMap<String, ScribeTemplate>,
-// }
+pub struct ScribeTemplateLibrary {
+    templates: HashMap<String, ScribeTemplate>,
+}
 
-// impl ScribeTemplateLibrary {
-//     pub fn new() -> Self {
-//         let mut templates: HashMap<String, ScribeTemplate> = HashMap::new();
-//
-//         // Basic.md
-//         let data = include!("templates/basic.md");
-//         let temp = ScribeTemplate::from_data("templates/basic.md", data);
-//         templates.insert("basic".to_string(), temp);
-//
-//         // Find User Options
-//         // TODO: Move this Append Path Functionality Up to ScribePath
-//         let root = ScribePath::from(&*NOTES_DIR);
-//         let mut template_dir = root.as_pathbuf();
-//         template_dir.push("templates");
-//
-//         let template_dir_path = ScribePath::from(&template_dir.as_path().display().to_string());
-//
-//         if template_dir_path.exists() {
-//             for file in template_dir_path.get_children() {
-//                 if file.is_markdown() {
-//                     let data = file.get_data().unwrap();
-//                     let template = ScribeTemplate::from_data(&file.as_string(true), &data);
-//                     templates.insert(file.get_base().unwrap().replace(".md", ""), template);
-//                 }
-//             }
-//         }
-//
-//         return Self {
-//             templates: templates,
-//         };
-//     }
-//
-//     pub fn list_templates(&self) -> HashSet<String> {
-//         let keys: HashSet<String> = self.templates.keys().cloned().collect();
-//         return keys;
-//     }
-//
-//     pub fn get_template(&self, template_name: &str) -> Option<&ScribeTemplate> {
-//         let template = self.templates.get(template_name);
-//
-//         if template.is_some() {
-//             let owned_template = template.unwrap();
-//             return Some(owned_template);
-//         }
-//
-//         return None;
-//     }
-// }
+impl ScribeTemplateLibrary {
+    fn builtins() -> HashMap<String, ScribeTemplate> {
+        let mut builtin_templates: HashMap<String, ScribeTemplate> = HashMap::new();
+
+        // Basic Template
+        builtin_templates.insert(
+            "basic".to_string(),
+            ScribeTemplate::from_str(
+                "---\ntitle: {{ TITLE }}\ndate: {{ DATE }}\ntags: {{ TAGS }}\n---\n\n# {{ TITLE }}",
+            ),
+        );
+
+        return builtin_templates;
+    }
+
+    pub fn load() -> Self {
+        let mut templates: HashMap<String, ScribeTemplate> = Self::builtins();
+
+        // Find User Options
+        // TODO: Move this Append Path Functionality Up to ScribePath
+        let mut template_dir_path: ScribePath = ScribePath::root(None);
+        template_dir_path.extend("templates");
+
+        if template_dir_path.exists() {
+            for file in template_dir_path.get_children() {
+                if file.is_markdown() {
+                    let data = file.get_data().unwrap();
+                    let template = ScribeTemplate::from_str(&data);
+                    templates.insert(file.get_base().unwrap().replace(".md", ""), template);
+                }
+            }
+        }
+
+        return Self { templates };
+    }
+
+    pub fn list_templates(&self) -> HashSet<String> {
+        let keys: HashSet<String> = self.templates.keys().cloned().collect();
+        return keys;
+    }
+
+    pub fn get_template(&self, template_name: &str) -> Option<&ScribeTemplate> {
+        let template = self.templates.get(template_name);
+
+        if template.is_some() {
+            let owned_template = template.unwrap();
+            return Some(owned_template);
+        }
+
+        return None;
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -162,5 +165,27 @@ mod tests {
         let params: HashMap<String, String> = HashMap::new();
         let filled_template = template.fill(&params);
         assert!(filled_template.is_err());
+    }
+
+    #[test]
+    fn test_template_library_load() {
+        let _library = ScribeTemplateLibrary::load();
+    }
+
+    #[test]
+    fn test_template_library_list_templates() {
+        let library = ScribeTemplateLibrary::load();
+        let templates = library.list_templates();
+        assert!(templates.len() > 0);
+    }
+
+    #[test]
+    fn test_template_library_get_template() {
+        let library = ScribeTemplateLibrary::load();
+        let templates = library.list_templates();
+        for template_name in templates {
+            let template = library.get_template(&template_name);
+            assert!(template.is_some());
+        }
     }
 }
