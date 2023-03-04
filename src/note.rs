@@ -12,14 +12,19 @@ impl Note {
         path: ScribePath,
         template: &ScribeTemplate,
         params: HashMap<String, String>,
-    ) -> Self {
+    ) -> Option<Self> {
         let init_data = template.fill(&params);
-        path.create_file(&init_data);
+        if init_data.is_ok() {
+            let unwrapped = &init_data.unwrap();
+            path.create_file(unwrapped);
 
-        return Self {
-            path: path,
-            data: init_data,
-        };
+            return Some(Self {
+                path: path,
+                data: unwrapped.to_owned(),
+            });
+        } else {
+            return None;
+        }
     }
 
     pub fn from_path(path: ScribePath) -> Self {

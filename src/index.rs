@@ -35,12 +35,12 @@ impl NoteInfo {
 
             note = NoteInfo {
                 path: path.as_string(true),
-                title: title,
-                tags: tags,
-                date: date,
-                embedded_links: embedded_links,
-                internal_links: internal_links,
-                web_links: web_links,
+                title,
+                tags,
+                date,
+                embedded_links,
+                internal_links,
+                web_links,
             }
         } else {
             note = NoteInfo {
@@ -87,8 +87,8 @@ pub struct ScribeIndex {
 
 impl ScribeIndex {
     pub fn new() -> Self {
-        let mut notes: Vec<NoteInfo> = vec![];
-        return Self { notes: notes };
+        let notes: Vec<NoteInfo> = vec![];
+        return Self { notes };
     }
     pub fn load(index_path: Option<ScribePath>) -> Option<Self> {
         let data: Option<String>;
@@ -126,7 +126,7 @@ impl ScribeIndex {
 
     pub fn write(&self) {
         let json_str = serde_json::to_string_pretty(&self).unwrap();
-        std::fs::write(Self::get_location().as_string(true), json_str);
+        _ = std::fs::write(Self::get_location().as_string(true), json_str);
     }
 
     pub fn delete(&self, path: &ScribePath) {

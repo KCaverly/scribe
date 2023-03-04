@@ -14,7 +14,11 @@ impl Parser {
             }
         }
 
-        return Some(res);
+        if res.len() > 0 {
+            return Some(res);
+        }
+
+        return None;
     }
 }
 

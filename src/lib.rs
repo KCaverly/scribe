@@ -13,3 +13,20 @@ lazy_static! {
     #[derive(Debug)]
     static ref NOTES_DIR: String = env::var("NOTES_DIR").unwrap();
 }
+
+use std::fmt;
+
+#[derive(Debug)]
+pub enum ScribeError {
+    MissingParams,
+}
+
+impl std::error::Error for ScribeError {}
+
+impl fmt::Display for ScribeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ScribeError::MissingParams => write!(f, "HTTP Error"),
+        }
+    }
+}
