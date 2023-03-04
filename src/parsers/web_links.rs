@@ -1,3 +1,6 @@
+use fancy_regex::Regex;
+use lazy_static::lazy_static;
+
 use crate::parsers::parser::Parser;
 use std::collections::HashSet;
 
@@ -5,15 +8,16 @@ pub struct WebLinks {}
 
 impl WebLinks {
     pub fn parse(data: &str) -> Option<HashSet<String>> {
+        lazy_static! {
+            static ref WEB_LINKS_1: Regex = Regex::new("(http[s]?:[^\\s\\)\\]]+)").unwrap();
+            static ref WEB_LINKS_2: Regex = Regex::new("(www.[^\\s\\)\\]]+)").unwrap();
+        };
+
         // Search for http... links
-        let search = "(http[s]?:[^\\s\\)\\]]+)".to_string();
-        let parser = Parser::new(search);
-        let matches = parser.get_matches(data);
+        let matches = Parser::get_matches(&WEB_LINKS_1, data);
 
         // Search for www.links
-        let search = "(www.[^\\s\\)\\]]+)".to_string();
-        let parser = Parser::new(search);
-        let matches_2 = parser.get_matches(data);
+        let matches_2 = Parser::get_matches(&WEB_LINKS_2, data);
 
         let mut full_matches: HashSet<String> = HashSet::new();
         if matches.is_some() {

@@ -1,12 +1,17 @@
 use crate::parsers::parser::Parser;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
+use fancy_regex::Regex;
+use lazy_static::lazy_static;
 
 pub struct Date {}
 
 impl Date {
     pub fn parse(data: &str) -> Option<DateTime<Local>> {
-        let parser = Parser::new("\\bdate: (.+)".to_string());
-        let matches = parser.get_matches(data);
+        lazy_static! {
+            static ref DATE: Regex = Regex::new("\\bdate: (.+)").unwrap();
+        };
+
+        let matches = Parser::get_matches(&DATE, data);
 
         let date_str: String;
         if matches.is_some() {

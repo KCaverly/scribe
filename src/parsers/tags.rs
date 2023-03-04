@@ -1,3 +1,6 @@
+use fancy_regex::Regex;
+use lazy_static::lazy_static;
+
 use crate::parsers::parser::Parser;
 use std::collections::HashSet;
 
@@ -5,10 +8,13 @@ pub struct Tags {}
 
 impl Tags {
     pub fn parse(data: &str) -> Option<HashSet<String>> {
+        lazy_static! {
+            static ref TAGS_1: Regex = Regex::new("\\btags:\\s\\[(.+)\\]").unwrap();
+            static ref TAGS_2: Regex = Regex::new(r"(?<!')\#([A-Z0-9a-z\\-\\_]+)").unwrap();
+        };
+
         // Get Front Matter Tags
-        let search = "\\btags:\\s\\[(.+)\\]".to_string();
-        let parser = Parser::new(search);
-        let matches = parser.get_matches(data);
+        let matches = Parser::get_matches(&TAGS_1, data);
 
         let mut tags = HashSet::<String>::new();
         for match_ in matches.unwrap() {
@@ -34,9 +40,7 @@ impl Tags {
         }
 
         // Get Hashtag Tags
-        let search = r"(?<!')\#([A-Z0-9a-z\\-\\_]+)".to_string();
-        let parser = Parser::new(search);
-        let matches = parser.get_matches(data);
+        let matches = Parser::get_matches(&TAGS_2, data);
 
         for match_ in matches.unwrap() {
             tags.insert(match_.to_string());

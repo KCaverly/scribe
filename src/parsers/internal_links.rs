@@ -1,3 +1,6 @@
+use fancy_regex::Regex;
+use lazy_static::lazy_static;
+
 use crate::parsers::parser::Parser;
 use std::collections::HashSet;
 
@@ -5,9 +8,12 @@ pub struct InternalLinks {}
 
 impl InternalLinks {
     pub fn parse(data: &str) -> Option<HashSet<String>> {
-        let search = "\\[.+\\]\\(([A-Za-z0-9\\-/\\._]+)\\)".to_string();
-        let parser = Parser::new(search);
-        let matches = parser.get_matches(data);
+        lazy_static! {
+            static ref INTERNAL_LINKS: Regex =
+                Regex::new("\\[.+\\]\\(([A-Za-z0-9\\-/\\._]+)\\)").unwrap();
+        };
+
+        let matches = Parser::get_matches(&INTERNAL_LINKS, data);
 
         let mut full_matches: HashSet<String> = HashSet::new();
         if matches.is_some() {

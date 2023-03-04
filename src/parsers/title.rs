@@ -1,12 +1,19 @@
+use fancy_regex::Regex;
+use lazy_static::lazy_static;
+
 use crate::parsers::parser::Parser;
 
 pub struct Title {}
 
 impl Title {
     pub fn parse(data: &str) -> Option<String> {
+        lazy_static! {
+            static ref TITLE_1: Regex = Regex::new("title: (.+)").unwrap();
+            static ref TITLE_2: Regex = Regex::new("(?<!\\#)\\#{1} (.+)").unwrap();
+        };
+
         // Default to Front Matter Title
-        let parser = Parser::new("title: (.+)".to_string());
-        let matches = parser.get_matches(data);
+        let matches = Parser::get_matches(&TITLE_1, data);
 
         let title: String;
         if matches.is_some() {
@@ -18,8 +25,7 @@ impl Title {
         }
 
         // Get Title from # header
-        let parser = Parser::new("(?<!\\#)\\#{1} (.+)".to_string());
-        let matches = parser.get_matches(data);
+        let matches = Parser::get_matches(&TITLE_2, data);
         if matches.is_some() {
             let found_matches = matches.unwrap();
             if found_matches.len() > 0 {
