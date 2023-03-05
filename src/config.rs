@@ -16,6 +16,7 @@ impl ScribeConfig {
         let cfg_hashmap = cfg.try_deserialize::<HashMap<String, String>>().unwrap();
 
         if cfg!(test) {
+            // Overwrite certain config options to send to test directory
             let test_dir = fs::canonicalize("./examples/small_project").unwrap();
             let dir_str = test_dir.to_str().unwrap();
             let mut cfg_hashmap: HashMap<String, String> = HashMap::new();

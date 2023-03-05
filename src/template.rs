@@ -81,7 +81,7 @@ impl ScribeTemplateLibrary {
         let mut templates: HashMap<String, ScribeTemplate> = Self::builtins();
 
         // Find User Options
-        let mut template_dir_path: ScribePath = ScribePath::root(None);
+        let mut template_dir_path: ScribePath = ScribePath::root();
         template_dir_path.extend("templates");
 
         if template_dir_path.exists() {

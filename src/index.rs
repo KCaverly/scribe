@@ -108,7 +108,7 @@ impl ScribeIndex {
     }
     pub fn index(&mut self) {
         // Iterate Through Notes Folder
-        let root = ScribePath::from(&*NOTES_DIR);
+        let root = ScribePath::root();
         for file in root.get_children() {
             if file.is_markdown() {
                 // Parse and Analyze Note
@@ -119,7 +119,7 @@ impl ScribeIndex {
     }
 
     fn get_location() -> ScribePath {
-        let mut root = ScribePath::root(None);
+        let mut root = ScribePath::root();
         root.extend(".scribe");
         return root;
     }
