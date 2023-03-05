@@ -81,7 +81,6 @@ impl ScribeTemplateLibrary {
         let mut templates: HashMap<String, ScribeTemplate> = Self::builtins();
 
         // Find User Options
-        // TODO: Move this Append Path Functionality Up to ScribePath
         let mut template_dir_path: ScribePath = ScribePath::root(None);
         template_dir_path.extend("templates");
 
@@ -96,6 +95,10 @@ impl ScribeTemplateLibrary {
         }
 
         return Self { templates };
+    }
+
+    pub fn has_template(&self, template_name: &str) -> bool {
+        return self.templates.contains_key(template_name.trim());
     }
 
     pub fn list_templates(&self) -> HashSet<String> {
@@ -187,5 +190,16 @@ mod tests {
             let template = library.get_template(&template_name);
             assert!(template.is_some());
         }
+    }
+
+    #[test]
+    fn test_template_library_has_template() {
+        let library = ScribeTemplateLibrary::load();
+
+        // Check That it is receiving builtin templates
+        assert!(library.has_template("basic"));
+
+        // Check That it is receiving user directory templates
+        assert!(library.has_template("test_template"));
     }
 }
