@@ -10,6 +10,8 @@ use crate::ScribeError;
 
 lazy_static! {
     static ref TEMPLATE_KEYS: Regex = Regex::new(r"\{\{\s([a-zA-Z0-9\_]+)\s\}\}").unwrap();
+    static ref TEMPLATE_DEFAULT_FOLDER: Regex =
+        Regex::new("default_folder: ([A-Za-z0-9\\_]+)").unwrap();
 }
 
 pub struct ScribeTemplate {
@@ -38,6 +40,16 @@ impl ScribeTemplate {
     pub fn get_keys(&self) -> Option<HashSet<String>> {
         let matches = Parser::get_matches(&TEMPLATE_KEYS, &self.data);
         return matches;
+    }
+
+    pub fn get_default_folder(&self) -> Option<String> {
+        let matches = Parser::get_matches(&TEMPLATE_DEFAULT_FOLDER, &self.data);
+        if matches.is_some() {
+            let unwrapped = matches.unwrap();
+            let default_folder = unwrapped.iter().next().unwrap().clone();
+            return Some(default_folder);
+        }
+        return None;
     }
 
     pub fn fill(&self, values: &HashMap<String, String>) -> Result<String, ScribeError> {
@@ -168,6 +180,16 @@ mod tests {
         let params: HashMap<String, String> = HashMap::new();
         let filled_template = template.fill(&params);
         assert!(filled_template.is_err());
+    }
+
+    #[test]
+    fn test_template_get_default_folder() {
+        let template: ScribeTemplate = ScribeTemplate::from_str(
+            r#"---\ntitle: This is the title\ndefault_folder: assets\ntags: ["tag1", "tag2"]\n---\n\n"#,
+        );
+        let default_folder = template.get_default_folder();
+        assert!(default_folder.is_some());
+        assert_eq!(default_folder.unwrap(), "assets".to_string());
     }
 
     #[test]
