@@ -36,6 +36,10 @@ impl WebLinks {
             }
         }
 
+        if full_matches.len() == 0 {
+            return None;
+        }
+
         return Some(full_matches);
     }
 }

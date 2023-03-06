@@ -15,15 +15,16 @@ impl InternalLinks {
 
         let matches = Parser::get_matches(&INTERNAL_LINKS, data);
 
-        let mut full_matches: HashSet<String> = HashSet::new();
         if matches.is_some() {
+            let mut full_matches: HashSet<String> = HashSet::new();
             for match_ in matches.unwrap() {
                 if !match_.starts_with("http") & !match_.starts_with("www.") {
                     full_matches.insert(match_);
                 }
             }
+            return Some(full_matches);
         }
-        return Some(full_matches);
+        return None;
     }
 }
 

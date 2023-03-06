@@ -1,15 +1,15 @@
+use crate::config::ScribeConfig;
 use crate::parsers::embedded_links::EmbeddedLinks;
 use crate::parsers::internal_links::InternalLinks;
 use crate::parsers::title::Title;
 use crate::parsers::web_links::WebLinks;
 use crate::parsers::{date::Date, tags::Tags};
 use crate::path::ScribePath;
-use crate::NOTES_DIR;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct NoteInfo {
     pub path: String,
     pub title: Option<String>,
@@ -80,7 +80,7 @@ impl NoteInfo {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct ScribeIndex {
     pub notes: Vec<NoteInfo>,
 }
@@ -110,7 +110,7 @@ impl ScribeIndex {
         // Iterate Through Notes Folder
         let root = ScribePath::root();
         for file in root.get_children() {
-            if file.is_markdown() {
+            if file.is_markdown() & !file.is_template() & !file.is_tmp() {
                 // Parse and Analyze Note
                 let note = NoteInfo::parse(&file);
                 self.notes.push(note);
@@ -154,5 +154,86 @@ impl ScribeIndex {
 
     pub fn insert(&self, path: &ScribePath) {
         todo!();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_note_info_parser() {
+        // Create temp file
+        let mut new_file = ScribePath::root();
+        new_file.extend("tmp/test.md");
+
+        let test_data = r#"---\ntitle: This is a test file\n tags: ["tag1", "tag2"]\n---\n\n# This is a test file\n\nThis is an embedded link [[projects/test/file]]. While this is a web link: [[www.google.com]]"#;
+
+        let res = new_file.create_file(test_data);
+        assert!(res.is_ok());
+
+        let test_tags: HashSet<String> = HashSet::from(["tag1".to_string(), "tag2".to_string()]);
+        let embedded_links: HashSet<String> = HashSet::from(["projects/test/file".to_string()]);
+
+        let test_note = NoteInfo {
+            path: new_file.as_string(true),
+            title: Some("This is a test file".to_string()),
+            tags: Some(test_tags),
+            date: None,
+            embedded_links: Some(embedded_links),
+            internal_links: None,
+            web_links: Some(HashSet::from(["www.google.com".to_string()])),
+        };
+
+        let parsed_note = NoteInfo::parse(&new_file);
+        assert_eq!(test_note, parsed_note);
+
+        let _res = new_file.delete();
+    }
+
+    #[test]
+    fn test_note_info_has_backlink() {
+        // Create temp file
+        let mut new_file = ScribePath::root();
+        new_file.extend("tmp/test.md");
+
+        let test_data = r#"---\ntitle: This is a test file\n tags: ["tag1", "tag2"]\n---\n\n# This is a test file\n\nThis is an embedded link [[projects/test/file]]. While this is a web link: [[www.google.com]]"#;
+
+        let res = new_file.create_file(test_data);
+        assert!(res.is_ok());
+
+        let parsed_note = NoteInfo::parse(&new_file);
+
+        let mut backlinked_file = ScribePath::root();
+        backlinked_file.extend("projects/test/file.md");
+        assert!(parsed_note.has_backlink(&backlinked_file));
+
+        let mut not_backlinked_file = ScribePath::root();
+        not_backlinked_file.extend("tmp/test.md");
+        assert!(!parsed_note.has_backlink(&not_backlinked_file));
+
+        let _res = new_file.delete();
+    }
+
+    #[test]
+    fn test_index_load_vs_index() {
+        let mut index_path = ScribePath::root();
+        index_path.extend("test_index.json");
+        let loaded_index = ScribeIndex::load(Some(index_path));
+
+        assert!(loaded_index.is_some());
+
+        let mut index = ScribeIndex::new();
+        index.index();
+
+        let unwrapped = loaded_index.unwrap();
+        for note in &index.notes {
+            assert!(unwrapped.notes.contains(&note), "{:?}", note);
+        }
+
+        for note in &unwrapped.notes {
+            assert!(index.notes.contains(&note), "{:?}", note);
+        }
     }
 }

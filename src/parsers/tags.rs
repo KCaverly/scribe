@@ -9,7 +9,7 @@ pub struct Tags {}
 impl Tags {
     pub fn parse(data: &str) -> Option<HashSet<String>> {
         lazy_static! {
-            static ref TAGS_1: Regex = Regex::new("\\btags:\\s\\[(.+)\\]").unwrap();
+            static ref TAGS_1: Regex = Regex::new(r#"\btags:\s\[([^\]]*)\]"#).unwrap();
             static ref TAGS_2: Regex = Regex::new(r"(?<!')\#([A-Z0-9a-z\-\_]+)").unwrap();
         };
 
@@ -49,6 +49,11 @@ impl Tags {
                 tags.insert(match_.to_string());
             }
         }
+
+        if tags.len() == 0 {
+            return None;
+        }
+
         return Some(tags);
     }
 }

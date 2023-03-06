@@ -1,19 +1,19 @@
 {
   "notes": [
     {
-      "path": "/home/kcaverly/personal/scribe/examples/small_project/test_file1.md",
+      "path": "/home/kcaverly/personal/scribe/examples/small_project/inbox/test_file1.md",
       "title": "Test File 1",
       "tags": [
         "tag1",
         "tag2"
       ],
       "date": null,
-      "embedded_links": [],
-      "internal_links": [],
-      "web_links": []
+      "embedded_links": null,
+      "internal_links": null,
+      "web_links": null
     },
     {
-      "path": "/home/kcaverly/personal/scribe/examples/small_project/test_file2.md",
+      "path": "/home/kcaverly/personal/scribe/examples/small_project/inbox/test_file2.md",
       "title": "Test File 2",
       "tags": [
         "test_tag",
@@ -24,11 +24,11 @@
       "embedded_links": [
         "test_file1"
       ],
-      "internal_links": [],
-      "web_links": []
+      "internal_links": null,
+      "web_links": null
     },
     {
-      "path": "/home/kcaverly/personal/scribe/examples/small_project/test_file3.md",
+      "path": "/home/kcaverly/personal/scribe/examples/small_project/inbox/test_file3.md",
       "title": "Test File 3",
       "tags": [
         "tag2",
@@ -36,14 +36,14 @@
         "fake_tag"
       ],
       "date": "2023-02-02T23:25:00-05:00",
-      "embedded_links": [],
-      "internal_links": [],
-      "web_links": []
+      "embedded_links": null,
+      "internal_links": null,
+      "web_links": null
     },
     {
-      "path": "/home/kcaverly/personal/scribe/examples/small_project/test_file4.md",
+      "path": "/home/kcaverly/personal/scribe/examples/small_project/inbox/test_file4.md",
       "title": "Test File 4",
-      "tags": [],
+      "tags": null,
       "embedded_links": [
         "test_file1",
         "test_file2"

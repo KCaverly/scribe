@@ -10,14 +10,16 @@ impl EmbeddedLinks {
     pub fn parse(data: &str) -> Option<HashSet<String>> {
         lazy_static! {
             static ref EMBEDDED_LINKS: Regex =
-                Regex::new("\\[\\[([a-zA-Z0-9/\\s_\\-]+)[|]?[\\]\\]]?").unwrap();
+                Regex::new("\\[\\[([\\.a-zA-Z0-9/\\s_\\-]+)[|]?[\\]\\]]?").unwrap();
         };
         let matches = Parser::get_matches(&EMBEDDED_LINKS, data);
 
         if matches.is_some() {
             let mut full_matches: HashSet<String> = HashSet::new();
             for match_ in matches.unwrap() {
-                full_matches.insert(match_.trim().to_string());
+                if !match_.starts_with("www") & !match_.starts_with("http") {
+                    full_matches.insert(match_.trim().to_string());
+                }
             }
             return Some(full_matches);
         }

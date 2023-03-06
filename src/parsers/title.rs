@@ -8,7 +8,7 @@ pub struct Title {}
 impl Title {
     pub fn parse(data: &str) -> Option<String> {
         lazy_static! {
-            static ref TITLE_1: Regex = Regex::new("title: (.+)").unwrap();
+            static ref TITLE_1: Regex = Regex::new("title: ([A-Za-z0-9\\s]+)").unwrap();
             static ref TITLE_2: Regex = Regex::new("(?<!\\#)\\#{1} (.+)").unwrap();
         };
 

@@ -159,6 +159,14 @@ impl ScribePath {
         return false;
     }
 
+    pub fn is_template(&self) -> bool {
+        return self.get_parent().as_string(false).starts_with("templates");
+    }
+
+    pub fn is_tmp(&self) -> bool {
+        return self.as_string(true).contains("tmp");
+    }
+
     pub fn get_parent(&self) -> Self {
         let pathbuf = self.as_pathbuf();
         let path_str = pathbuf.parent().unwrap().to_str().unwrap();
@@ -239,8 +247,6 @@ impl ScribePath {
 
 #[cfg(test)]
 mod tests {
-    use core::time;
-    use std::thread;
 
     use super::*;
 
@@ -277,7 +283,7 @@ mod tests {
         let mut test_child = ScribePath::root();
         assert!(!children.contains(&test_child));
 
-        test_child.extend("test_file1.md");
+        test_child.extend("inbox/test_file1.md");
         assert!(children.contains(&test_child));
     }
 
@@ -392,7 +398,7 @@ mod tests {
     #[test]
     fn test_path_create_and_delete_file() {
         let mut root = ScribePath::root();
-        root.extend("tmp/test.md");
+        root.extend("tmp/test_asdfasdf.md");
 
         let res = root.create_file("this is test data");
         assert!(res.is_ok());
