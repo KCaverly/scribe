@@ -32,8 +32,7 @@
       "title": "Test File 3",
       "tags": [
         "tag2",
-        "tag3",
-        "fake_tag"
+        "tag3"
       ],
       "date": "2023-02-02T23:25:00-05:00",
       "embedded_links": null,

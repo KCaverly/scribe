@@ -7,4 +7,4 @@ title: Test File 3
 # Test File 3
 
 '#fake_tag'
-#fake_tag
+#tag2

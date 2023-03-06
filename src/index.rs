@@ -133,11 +133,11 @@ impl ScribeIndex {
         todo!();
     }
 
-    pub fn update(&self, path: &ScribePath) {
-        for mut note in &self.notes {
-            if note.path == path.as_string(true) {
+    pub fn update(&mut self, path: &ScribePath) {
+        for i in 0..self.notes.len() {
+            if self.notes[i].path == path.as_string(true) {
                 let new_note = NoteInfo::parse(&path);
-                note = &new_note;
+                self.notes[i] = new_note;
             }
         }
     }
@@ -224,6 +224,7 @@ mod tests {
 
         assert!(loaded_index.is_some());
 
+        // Test Creating a New Index
         let mut index = ScribeIndex::new();
         index.index();
 
@@ -235,5 +236,42 @@ mod tests {
         for note in &unwrapped.notes {
             assert!(index.notes.contains(&note), "{:?}", note);
         }
+
+        // Test Updating an Index
+        for i in 0..index.notes.len() {
+            let note_path = ScribePath::from(&index.notes[i].path);
+            if index.notes[i].tags.is_some() {
+                let replace_tag = index.notes[i]
+                    .tags
+                    .as_ref()
+                    .unwrap()
+                    .iter()
+                    .next()
+                    .cloned()
+                    .unwrap();
+
+                let new_tag = "new_tag";
+                let res = note_path.replace(&replace_tag, new_tag);
+                assert!(res.is_ok());
+
+                // Update in Index
+                index.update(&note_path);
+
+                for j in 0..index.notes.len() {
+                    if index.notes[j].path == note_path.as_string(true) {
+                        assert!(index.notes[j].tags.as_ref().unwrap().contains("new_tag"));
+                    }
+                }
+
+                let res2 = note_path.replace("new_tag", &replace_tag);
+                assert!(res2.is_ok());
+            }
+        }
+
+        // let note = &index.notes[0];
+        // let note_path = ScribePath::from(&note.path);
+        // let replace_tag = note.tags.as_ref().unwrap().iter().next().cloned().unwrap();
+        // let new_tag = "new_tag".to_string();
+        // note_path.replace(replace_tag.to_owned(), new_tag);
     }
 }

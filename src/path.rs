@@ -232,7 +232,7 @@ impl ScribePath {
         return None;
     }
 
-    pub fn replace(&self, replace_str: String, new_str: String) -> std::io::Result<()> {
+    pub fn replace(&self, replace_str: &str, new_str: &str) -> std::io::Result<()> {
         let og_data = self.get_data().unwrap();
         let new_data = og_data.replace(&replace_str, &new_str);
         let mut f = std::fs::OpenOptions::new()
@@ -451,7 +451,7 @@ mod tests {
         let res = root.create_file(&test_data);
         assert!(res.is_ok());
 
-        let res = root.replace("test".to_string(), "tested!".to_string());
+        let res = root.replace("test", "tested!");
         assert!(res.is_ok());
         let data = root.get_data();
         assert!(data.is_some());
