@@ -129,8 +129,21 @@ impl ScribeIndex {
         _ = std::fs::write(Self::get_location().as_string(true), json_str);
     }
 
-    pub fn delete(&self, path: &ScribePath) {
-        todo!();
+    pub fn delete(&mut self, path: &ScribePath) {
+        for i in 0..self.notes.len() - 1 {
+            if self.notes[i].path == path.as_string(true) {
+                self.notes.remove(i);
+            }
+        }
+    }
+
+    fn in_index(&self, path: &ScribePath) -> bool {
+        for note in &self.notes {
+            if note.path == path.as_string(true) {
+                return true;
+            }
+        }
+        return false;
     }
 
     pub fn update(&mut self, path: &ScribePath) {
@@ -152,8 +165,13 @@ impl ScribeIndex {
         return links;
     }
 
-    pub fn insert(&self, path: &ScribePath) {
-        todo!();
+    pub fn insert(&mut self, path: &ScribePath) {
+        if self.in_index(path) {
+            self.update(path);
+        } else {
+            let note_info = NoteInfo::parse(path);
+            self.notes.insert(self.notes.len(), note_info);
+        }
     }
 }
 
@@ -257,7 +275,7 @@ mod tests {
                 // Update in Index
                 index.update(&note_path);
 
-                for j in 0..index.notes.len() {
+                for j in 0..index.notes.len() - 1 {
                     if index.notes[j].path == note_path.as_string(true) {
                         assert!(index.notes[j].tags.as_ref().unwrap().contains("new_tag"));
                     }
@@ -268,10 +286,20 @@ mod tests {
             }
         }
 
-        // let note = &index.notes[0];
-        // let note_path = ScribePath::from(&note.path);
-        // let replace_tag = note.tags.as_ref().unwrap().iter().next().cloned().unwrap();
-        // let new_tag = "new_tag".to_string();
-        // note_path.replace(replace_tag.to_owned(), new_tag);
+        // Test Writes and Loads
+        index.write();
+
+        let new_index = ScribeIndex::load(None).unwrap();
+        assert_eq!(index, new_index);
+
+        // Test delete
+        let test_note = &new_index.notes[0];
+        index.delete(&ScribePath::from(&test_note.path));
+
+        assert!(index.notes.len() < new_index.notes.len());
+
+        // Test Insert
+        index.insert(&ScribePath::from(&test_note.path));
+        assert!(index.notes.len() == new_index.notes.len());
     }
 }
