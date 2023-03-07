@@ -295,7 +295,6 @@ mod tests {
         // Test delete
         let test_note = &new_index.notes[0];
         index.delete(&ScribePath::from(&test_note.path));
-
         assert!(index.notes.len() < new_index.notes.len());
 
         // Test Insert
