@@ -1,4 +1,3 @@
-# Test File 1
+# Test File 1 
 
-#tag1
-#tag2
+#tag1 #tag2

@@ -28,12 +28,14 @@ impl Note {
         }
     }
 
-    pub fn transfer(&mut self, category: &str) -> Result<(), std::io::Error> {
+    pub fn from_path(path: ScribePath) -> Self {
+        return Self { path };
+    }
+
+    pub fn transfer(&mut self, path: ScribePath) -> Result<(), std::io::Error> {
         // Move File Over
         let og_path = self.path.clone();
-        let mut new_path = self.path.clone();
-        new_path.replace_category(category);
-        self.path.rename(new_path)?;
+        self.path.rename(path)?;
 
         // Replace Links
         let index = ScribeIndex::load(None);
@@ -54,6 +56,9 @@ impl Note {
 
             // Insert New Note
             unwrapped_index.insert(&self.path);
+
+            // Write New Index
+            unwrapped_index.write();
         }
         return Ok(());
     }
@@ -81,4 +86,18 @@ mod tests {
         let new_note = Note::from_template(path, template, params);
         assert!(new_note.is_some());
     }
+
+    // #[test]
+    // fn test_note_transfer() {
+    //     // Get Path of Existing Note
+    //     let mut path = ScribePath::root();
+    //     path.extend("tmp/test2.md");
+    //
+    //     let mut new_path = ScribePath::root();
+    //     new_path.extend("tmp/test3.md");
+    //
+    //     let mut note = Note::from_path(path);
+    //     let res = note.transfer(new_path);
+    //     assert!(res.is_ok());
+    // }
 }
