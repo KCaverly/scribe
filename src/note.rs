@@ -32,34 +32,36 @@ impl Note {
         return Self { path };
     }
 
-    pub fn transfer(&mut self, path: ScribePath) -> Result<(), std::io::Error> {
+    pub fn transfer(&mut self, path: &ScribePath) -> Result<(), std::io::Error> {
         // Move File Over
         let og_path = self.path.clone();
-        self.path.rename(path)?;
+        let mut new_path = self.path.clone();
+        let res = new_path.rename(&path);
 
-        // Replace Links
-        let index = ScribeIndex::load(None);
-        if index.is_some() {
-            let mut unwrapped_index = index.unwrap();
-            let backlinks = unwrapped_index.get_backlinks(&og_path);
+        if res.is_ok() {
+            // Replace Links
+            let mut index = ScribeIndex::new();
+            index.index(None);
+            let backlinks = index.get_backlinks(&og_path);
             for backlink in backlinks {
                 // Update the Backlinked File With Correct Path
                 backlink.replace(&og_path.as_string(true), &self.path.as_string(false))?;
                 backlink.replace(&og_path.as_string(false), &self.path.as_string(false))?;
 
                 // Update Index
-                unwrapped_index.update(&backlink);
+                index.update(&backlink);
             }
 
             // Delete Existing Note
-            unwrapped_index.delete(&og_path);
+            index.delete(&og_path);
 
             // Insert New Note
-            unwrapped_index.insert(&self.path);
+            index.insert(&self.path);
 
             // Write New Index
-            unwrapped_index.write();
+            index.write();
         }
+
         return Ok(());
     }
 }
@@ -87,17 +89,20 @@ mod tests {
         assert!(new_note.is_some());
     }
 
-    // #[test]
-    // fn test_note_transfer() {
-    //     // Get Path of Existing Note
-    //     let mut path = ScribePath::root();
-    //     path.extend("tmp/test2.md");
-    //
-    //     let mut new_path = ScribePath::root();
-    //     new_path.extend("tmp/test3.md");
-    //
-    //     let mut note = Note::from_path(path);
-    //     let res = note.transfer(new_path);
-    //     assert!(res.is_ok());
-    // }
+    #[test]
+    fn test_note_transfer() {
+        // Get Path of Existing Note
+        let mut path = ScribePath::root();
+        path.extend("tmp/test_note_test.md");
+        let _res = path.create_file("This is a test file");
+
+        let mut new_path = ScribePath::root();
+        new_path.extend("tmp/test_note_moved.md");
+
+        let mut note = Note::from_path(path);
+        let res = note.transfer(&new_path);
+        assert!(res.is_ok());
+
+        let _res = new_path.delete();
+    }
 }

@@ -211,7 +211,7 @@ impl ScribePath {
         return Ok(());
     }
 
-    pub fn rename(&mut self, new_path: Self) -> Result<(), io::Error> {
+    pub fn rename(&mut self, new_path: &Self) -> Result<(), io::Error> {
         let res = rename(self.as_string(true), new_path.as_string(true));
         if res.is_ok() {
             self.path = new_path.as_string(true);
@@ -410,7 +410,7 @@ mod tests {
     #[test]
     fn test_path_create_rename_and_delete_file() {
         let mut root = ScribePath::root();
-        root.extend("tmp/test2.md");
+        root.extend("tmp/test3.md");
 
         let mut new_file = ScribePath::root();
         new_file.extend("tmp/test2_renamed.md");
@@ -418,7 +418,7 @@ mod tests {
         let res = root.create_file("this is test data");
         assert!(res.is_ok());
 
-        let res = root.rename(new_file);
+        let res = root.rename(&new_file);
         assert!(res.is_ok());
 
         let res = root.delete();

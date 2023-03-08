@@ -106,9 +106,15 @@ impl ScribeIndex {
         }
         return None;
     }
-    pub fn index(&mut self) {
+    pub fn index(&mut self, path: Option<ScribePath>) {
         // Iterate Through Notes Folder
-        let root = ScribePath::root();
+        let root: ScribePath;
+        if path.is_some() {
+            root = path.unwrap();
+        } else {
+            root = ScribePath::root();
+        }
+
         for file in root.get_children() {
             if file.is_markdown() & !file.is_template() & !file.is_tmp() {
                 // Parse and Analyze Note
@@ -130,9 +136,11 @@ impl ScribeIndex {
     }
 
     pub fn delete(&mut self, path: &ScribePath) {
-        for i in 0..self.notes.len() - 1 {
-            if self.notes[i].path == path.as_string(true) {
-                self.notes.remove(i);
+        if self.notes.len() > 0 {
+            for i in 0..self.notes.len() - 1 {
+                if self.notes[i].path == path.as_string(true) {
+                    self.notes.remove(i);
+                }
             }
         }
     }
@@ -244,7 +252,7 @@ mod tests {
 
         // Test Creating a New Index
         let mut index = ScribeIndex::new();
-        index.index();
+        index.index(None);
 
         let unwrapped = loaded_index.unwrap();
         for note in &index.notes {
