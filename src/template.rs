@@ -86,6 +86,13 @@ impl ScribeTemplateLibrary {
             ),
         );
 
+        // Image Card
+        builtin_templates.insert(
+            "image".to_string(),
+            ScribeTemplate::from_str(
+                r#"---\ntitle: {{ TITLE }}\n---\n\n# {{ TITLE }} \n<p align='center'>\n<img src="{{ IMAGE }}">\n</p>"#)
+        );
+
         return builtin_templates;
     }
 
