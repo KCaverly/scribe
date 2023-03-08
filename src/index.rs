@@ -1,4 +1,3 @@
-use crate::config::ScribeConfig;
 use crate::parsers::embedded_links::EmbeddedLinks;
 use crate::parsers::internal_links::InternalLinks;
 use crate::parsers::title::Title;

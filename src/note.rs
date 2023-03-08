@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-    index::ScribeIndex, path::ScribePath, template::ScribeTemplate, template::ScribeTemplateLibrary,
-};
+use crate::{index::ScribeIndex, path::ScribePath, template::ScribeTemplate};
 
 pub struct Note {
     path: ScribePath,
@@ -69,6 +67,7 @@ impl Note {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::template::ScribeTemplateLibrary;
 
     #[test]
     fn test_note_from_template() {
